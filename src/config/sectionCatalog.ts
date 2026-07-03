@@ -1,0 +1,354 @@
+import {
+  Image,
+  Images,
+  LayoutGrid,
+  ShoppingBag,
+  Megaphone,
+  Video,
+  Type,
+  Search,
+  Sparkles,
+  Tag,
+  GalleryHorizontalEnd,
+  Layers,
+  Star,
+  Shirt,
+  type LucideIcon,
+} from "lucide-react";
+import type { JsonMap, LayoutType } from "@/types";
+
+export interface SectionDef {
+  /** Canonical sectionType sent to the API. */
+  type: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  defaultLayout: LayoutType;
+  defaultConfig: JsonMap;
+  /** Whether this section type holds repeatable items (slides/cards/etc). */
+  hasItems: boolean;
+  itemNoun: string;
+}
+
+// The builder palette. Mirrors the section types the mobile app understands.
+export const SECTION_CATALOG: SectionDef[] = [
+  {
+    type: "BANNER",
+    label: "Banner",
+    description: "Full-width hero image with title, subtitle and a CTA button.",
+    icon: Image,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Slide",
+    defaultConfig: {
+      textColor: "#ffffff",
+      buttonText: "VIEW ALL",
+      buttonColor: "#ffffff",
+      buttonTextColor: "#000000",
+      buttonStyle: "filled",
+      textPosition: "bottom",
+      overlayOpacity: 0.35,
+      backgroundMediaType: "IMAGE",
+      backgroundMediaValue: "",
+    },
+  },
+  {
+    type: "hero_carousel",
+    label: "Hero Carousel",
+    description: "Swipeable full-bleed slides with dots and autoplay.",
+    icon: GalleryHorizontalEnd,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Slide",
+    defaultConfig: {
+      autoPlay: true,
+      interval: 4000,
+      showDots: true,
+      showArrows: false,
+      aspectRatio: "3/4",
+      backgroundMediaValue: "",
+      loop: true,
+      overlayOpacity: 0.2,
+      dotActiveColor: "#ffffff",
+      dotInactiveColor: "#ffffff80",
+    },
+  },
+  {
+    type: "collection_carousel",
+    label: "Collection Carousel",
+    description: "Horizontally scrolling collection cards.",
+    icon: Images,
+    defaultLayout: "CAROUSEL",
+    hasItems: true,
+    itemNoun: "Collection",
+    defaultConfig: {
+      productLimit: 8,
+      showViewAll: true,
+      viewAllText: "View all",
+      cardBorderRadius: 12,
+    },
+  },
+  {
+    type: "product_shelf",
+    label: "Product Shelf",
+    description: "A horizontal shelf of product cards from a collection.",
+    icon: ShoppingBag,
+    defaultLayout: "CAROUSEL",
+    hasItems: true,
+    itemNoun: "Product source",
+    defaultConfig: {
+      maxItems: 10,
+      columns: 2,
+      cardStyle: "default",
+      showPrice: true,
+      showWishlist: true,
+      showAddToCart: true,
+      showDiscountBadge: true,
+      showSectionTitle: true,
+      showViewAll: true,
+      viewAllText: "View all",
+      cardBorderRadius: 12,
+      aspectRatio: "3/4",
+    },
+  },
+  {
+    type: "category_grid",
+    label: "Category Grid",
+    description: "A grid of category tiles with labels.",
+    icon: LayoutGrid,
+    defaultLayout: "GRID",
+    hasItems: true,
+    itemNoun: "Category",
+    defaultConfig: {
+      columns: 4,
+      rows: 2,
+      gap: 8,
+      imageShape: "circle",
+      showLabel: true,
+      showSectionTitle: true,
+      aspectRatio: "1/1",
+      labelFontSize: 11,
+      textAlign: "center",
+    },
+  },
+  {
+    type: "lookbook_grid",
+    label: "Lookbook Grid",
+    description: "Editorial image grid with overlay labels.",
+    icon: Layers,
+    defaultLayout: "TWO_COLUMN",
+    hasItems: true,
+    itemNoun: "Look",
+    defaultConfig: {
+      columns: 2,
+      gap: 8,
+      aspectRatio: "3/4",
+      showOverlay: true,
+      overlayOpacity: 0.25,
+      showLabel: true,
+      labelPosition: "bottom",
+      borderRadius: 12,
+    },
+  },
+  {
+    type: "offer_strip",
+    label: "Offer Strip",
+    description: "Auto-scrolling marquee of short offer messages.",
+    icon: Tag,
+    defaultLayout: "CAROUSEL",
+    hasItems: true,
+    itemNoun: "Offer",
+    defaultConfig: {
+      autoScroll: true,
+      scrollSpeed: 3000,
+      loop: true,
+      textColor: "#ffffff",
+      fontSize: 12,
+      fontWeight: "500",
+      textAlign: "center",
+      showDivider: true,
+      dividerChar: "|",
+      paddingVertical: 8,
+    },
+  },
+  {
+    type: "promo_hero",
+    label: "Promo Hero",
+    description:
+      "Lifestyle hero with a condensed headline, sub-heading pill and shop-the-category cards.",
+    icon: Shirt,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Card",
+    defaultConfig: {
+      heading: "YOUR PERFECT SUMMER VIBE",
+      subheadingText: "DEALS THAT'S HARD TO RESISTS",
+      backgroundImage: "/promo/summer-bg.png",
+      cards: [
+        { label: "Shop Topwear", image: "/promo/card-topwear.png" },
+        { label: "Shop Bottomwear", image: "/promo/card-bottomwear.png" },
+      ],
+    },
+  },
+  {
+    type: "mood_grid",
+    label: "Mood Grid",
+    description:
+      "Editorial grid of model photos with mood labels (Popular Category style).",
+    icon: LayoutGrid,
+    defaultLayout: "GRID",
+    hasItems: true,
+    itemNoun: "Tile",
+    defaultConfig: { columns: 3 },
+  },
+  {
+    type: "category_banner",
+    label: "Category Banner",
+    description:
+      "Full-bleed lifestyle image with a category name and product count overlay.",
+    icon: Image,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Image",
+    defaultConfig: { productCount: "1280 PRODUCTS", backgroundImage: "" },
+  },
+  {
+    type: "shop_the_look",
+    label: "Shop the Look",
+    description:
+      "Lifestyle look image with product hotspots and a row of featured products.",
+    icon: Shirt,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Product",
+    defaultConfig: { backgroundImage: "", showMemberPrice: true },
+  },
+  {
+    type: "sale_banner",
+    label: "Sale Banner",
+    description: "Promo banner with discount label and optional countdown.",
+    icon: Megaphone,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: false,
+    itemNoun: "Item",
+    defaultConfig: {
+      discountLabel: "50% OFF",
+      textColor: "#ffffff",
+      backgroundColor: "#111111",
+      buttonText: "Shop now",
+      showButton: true,
+      buttonColor: "#ffffff",
+      buttonTextColor: "#000000",
+      showCountdown: false,
+      paddingV: 32,
+      paddingH: 20,
+      textAlign: "center",
+    },
+  },
+  {
+    type: "video_banner",
+    label: "Video Banner",
+    description: "Full-width autoplaying background video with overlay text.",
+    icon: Video,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Video",
+    defaultConfig: {
+      autoPlay: true,
+      loop: true,
+      muted: true,
+      overlayOpacity: 0.3,
+      textColor: "#ffffff",
+      aspectRatio: "9/16",
+      backgroundMediaType: "VIDEO",
+      backgroundMediaValue: "",
+    },
+  },
+  {
+    type: "rich_text",
+    label: "Rich Text",
+    description: "Formatted heading + body copy block.",
+    icon: Type,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: false,
+    itemNoun: "Item",
+    defaultConfig: {
+      showTitle: true,
+      htmlContent: "<p>Add your content here…</p>",
+      fontSize: 14,
+      textAlign: "left",
+      textColor: "#333333",
+      titleColor: "#111111",
+      titleSize: 20,
+      lineHeight: 1.6,
+      paddingH: 20,
+      paddingV: 20,
+    },
+  },
+  {
+    type: "search_bar",
+    label: "Search Bar",
+    description: "Search input with trending tags.",
+    icon: Search,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Trending tag",
+    defaultConfig: {
+      placeholder: "Search for products…",
+      borderRadius: 24,
+      backgroundColor: "#f3f4f6",
+      showVoiceSearch: true,
+      showCameraSearch: true,
+      showTrendingTags: true,
+      trendingTagsLabel: "Trending",
+      paddingH: 16,
+      paddingV: 12,
+    },
+  },
+  {
+    type: "featured_collection_products",
+    label: "Featured Collection",
+    description: "Highlighted products from a featured collection.",
+    icon: Sparkles,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Feature",
+    defaultConfig: {
+      textColor: "#ffffff",
+      buttonText: "Shop now",
+      buttonColor: "#ffffff",
+      buttonTextColor: "#000000",
+      buttonStyle: "filled",
+      textPosition: "bottom",
+      overlayOpacity: 0.3,
+    },
+  },
+  {
+    type: "services_information",
+    label: "Services Strip",
+    description: "Trust badges / service highlights (free delivery, returns…).",
+    icon: Star,
+    defaultLayout: "FULL_WIDTH",
+    hasItems: true,
+    itemNoun: "Service",
+    defaultConfig: {},
+  },
+];
+
+const BY_TYPE = new Map(
+  SECTION_CATALOG.map((d) => [d.type.toLowerCase(), d])
+);
+
+/** Resolve any API section type (case-insensitive) to its definition. */
+export function getSectionDef(sectionType: string): SectionDef | undefined {
+  return BY_TYPE.get(sectionType?.toLowerCase());
+}
+
+export function sectionLabel(sectionType: string): string {
+  return (
+    getSectionDef(sectionType)?.label ??
+    sectionType
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}

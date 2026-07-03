@@ -1,0 +1,37 @@
+services:
+
+  frontend:
+    image: powelook-frontend:staging
+
+    container_name: powelook-stag-frontend
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # VITE_* values are compiled INTO the static bundle at build time, so they
+      # must be supplied here (not as runtime `environment`). Override per-env via
+      # an `.env` file sitting next to this compose file, or with `--build-arg`.
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://YOUR_API_BASE_URL/api/v1}
+        VITE_API_TIMEOUT: ${VITE_API_TIMEOUT:-30000}
+        VITE_NGROK_SKIP_WARNING: ${VITE_NGROK_SKIP_WARNING:-false}
+        VITE_AUTH_LOGIN_PATH: ${VITE_AUTH_LOGIN_PATH:-/auth/shopify}
+        VITE_TOKEN_STORAGE_KEY: ${VITE_TOKEN_STORAGE_KEY:-cms_admin_token}
+        VITE_APP_NAME: ${VITE_APP_NAME:-Mobile App Builder}
+        VITE_STORE_BRAND_NAME: ${VITE_STORE_BRAND_NAME:-POWERLOOK}
+        VITE_DEFAULT_PAGE_KEY: ${VITE_DEFAULT_PAGE_KEY:-HOME_PAGE}
+        VITE_SHOPIFY_ENABLED: ${VITE_SHOPIFY_ENABLED:-true}
+
+    ports:
+      - "80:80"
+
+    networks:
+      - powelook-stag
+
+    restart: always
+
+
+networks:
+
+  powelook-stag:
+    external: true
