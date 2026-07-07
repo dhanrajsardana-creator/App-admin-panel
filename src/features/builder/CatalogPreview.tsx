@@ -82,8 +82,9 @@ function CollectionIndexView() {
                 </p>
               )}
               <p className="mt-0.5 text-[9px] text-zinc-400">
-                {c.productsCount} products
-                {formattedDate && ` · Updated ${formattedDate}`}
+                {c.productsCount > 0 ? `${c.productsCount} products` : ""}
+                {c.productsCount > 0 && formattedDate ? " · " : ""}
+                {formattedDate && `Updated ${formattedDate}`}
               </p>
             </div>
             <div className="h-full w-28 shrink-0 overflow-hidden">
@@ -188,7 +189,9 @@ function CollectionView({ catalog }: { catalog: CatalogPreviewRef }) {
         <BackButton className="absolute left-2 top-2" />
         <div className="absolute inset-x-0 bottom-0 p-3 text-white">
           <h2 className="text-lg font-bold leading-tight">{data.title}</h2>
-          <p className="text-[11px] opacity-90">{data.productsCount} products</p>
+          {data.productsCount > 0 && (
+            <p className="text-[11px] opacity-90">{data.productsCount} products</p>
+          )}
         </div>
       </div>
 

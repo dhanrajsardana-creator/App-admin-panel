@@ -71,7 +71,7 @@ function SectionRefs({
         <span
           key={it.id}
           title={`${r.kind}: ${r.title}${
-            r.productsCount != null ? ` (${r.productsCount} products)` : ""
+            r.productsCount ? ` (${r.productsCount} products)` : ""
           }`}
           className="inline-flex max-w-[120px] items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
         >

@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
               target: `https://${shopDomain}`,
               changeOrigin: true,
               secure: true,
-              rewrite: () => `/admin/api/${apiVersion}/graphql.json`,
+              rewrite: () => `/api/${apiVersion}/graphql.json`,
               configure: (proxy) => {
                 proxy.on("proxyReq", (proxyReq) => {
                   if (adminToken) {

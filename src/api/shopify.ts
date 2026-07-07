@@ -104,6 +104,33 @@ function money(m: { amount: string; currencyCode: string } | null): string | nul
   return `${sym}${Number.isFinite(n) ? n.toLocaleString() : m.amount}`;
 }
 
+async function storefrontGql<T>(query: string): Promise<T> {
+  const domain = "www.powerlook.in";
+  const token = "df3b1660e6859f510b854dc282eccdf9";
+  const apiVersion = "2026-04";
+
+  const res = await fetch(`https://${domain}/api/${apiVersion}/graphql.json`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Storefront-Access-Token": token,
+    },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) {
+    throw new Error(`Storefront API error ${res.status}`);
+  }
+  const json = await res.json();
+  if (json.errors) {
+    throw new Error(
+      Array.isArray(json.errors)
+        ? json.errors.map((e: { message: string }) => e.message).join("; ")
+        : "Storefront GraphQL error"
+    );
+  }
+  return json.data as T;
+}
+
 export const shopifyApi = {
   shop: async (): Promise<{ name: string; domain: string }> => {
     const d = await gql<{ shop: { name: string; myshopifyDomain: string } }>(
@@ -113,7 +140,7 @@ export const shopifyApi = {
   },
 
   collections: async (first = 50): Promise<ShopifyCollection[]> => {
-    const d = await gql<{
+    const d = await storefrontGql<{
       collections: {
         edges: {
           node: {
@@ -122,20 +149,20 @@ export const shopifyApi = {
             handle: string;
             description: string | null;
             updatedAt: string | null;
-            productsCount: { count: number } | null;
             image: { url: string } | null;
+            products: { edges: { node: { featuredImage: { url: string } | null } }[] };
           };
         }[];
       };
     }>(
-      `query { collections(first: ${first}) { edges { node { id title handle description updatedAt productsCount { count } image { url } } } } }`
+      `query { collections(first: ${first}) { edges { node { id title handle description updatedAt image { url } products(first: 1) { edges { node { featuredImage { url } } } } } } } }`
     );
     return d.collections.edges.map(({ node }) => ({
       id: numericId(node.id),
       title: node.title,
       handle: node.handle,
-      productsCount: node.productsCount?.count ?? 0,
-      imageUrl: node.image?.url ?? null,
+      productsCount: 0,
+      imageUrl: node.products.edges[0]?.node.featuredImage?.url ?? node.image?.url ?? null,
       description: node.description ?? null,
       updatedAt: node.updatedAt ?? null,
     }));
@@ -146,7 +173,7 @@ export const shopifyApi = {
    * the card has a thumbnail even when the collection itself has no image.
    */
   collectionsIndex: async (first = 50): Promise<ShopifyCollectionCard[]> => {
-    const d = await gql<{
+    const d = await storefrontGql<{
       collections: {
         edges: {
           node: {
@@ -155,34 +182,27 @@ export const shopifyApi = {
             handle: string;
             description: string | null;
             updatedAt: string | null;
-            productsCount: { count: number } | null;
             image: { url: string } | null;
             products: { edges: { node: { featuredImage: { url: string } | null } }[] };
           };
         }[];
       };
     }>(
-      `query { collections(first: ${first}) { edges { node {
-        id title handle description updatedAt productsCount { count } image { url }
-        products(first: 1) { edges { node { featuredImage { url } } } }
-      } } } }`
+      `query { collections(first: ${first}) { edges { node { id title handle description updatedAt image { url } products(first: 1) { edges { node { featuredImage { url } } } } } } } }`
     );
     return d.collections.edges.map(({ node }) => ({
       id: numericId(node.id),
       title: node.title,
       handle: node.handle,
-      productsCount: node.productsCount?.count ?? 0,
-      imageUrl:
-        node.products.edges[0]?.node.featuredImage?.url ??
-        node.image?.url ??
-        null,
+      productsCount: 0,
+      imageUrl: node.products.edges[0]?.node.featuredImage?.url ?? node.image?.url ?? null,
       description: node.description ?? null,
       updatedAt: node.updatedAt ?? null,
     }));
   },
 
   products: async (first = 250): Promise<ShopifyProduct[]> => {
-    const d = await gql<{
+    const d = await storefrontGql<{
       products: {
         edges: {
           node: {
@@ -191,21 +211,20 @@ export const shopifyApi = {
             handle: string;
             vendor: string | null;
             productType: string | null;
-            status: string | null;
             tags: string[];
             featuredImage: { url: string } | null;
           };
         }[];
       };
     }>(
-      `query { products(first: ${first}) { edges { node { id title handle vendor productType status tags featuredImage { url } } } } }`
+      `query { products(first: ${first}) { edges { node { id title handle vendor productType tags featuredImage { url } } } } }`
     );
     return d.products.edges.map(({ node }) => ({
       id: numericId(node.id),
       title: node.title,
       handle: node.handle,
       productType: node.productType,
-      status: node.status,
+      status: null,
       imageUrl: node.featuredImage?.url ?? null,
       vendor: node.vendor ?? null,
       tags: node.tags ?? [],
@@ -217,13 +236,12 @@ export const shopifyApi = {
     id: string,
     first = 24
   ): Promise<ShopifyCollectionDetail> => {
-    const d = await gql<{
+    const d = await storefrontGql<{
       collection: {
         id: string;
         title: string;
         handle: string;
         image: { url: string } | null;
-        productsCount: { count: number } | null;
         products: {
           edges: {
             node: {
@@ -231,7 +249,7 @@ export const shopifyApi = {
               title: string;
               handle: string;
               featuredImage: { url: string } | null;
-              priceRangeV2: {
+              priceRange: {
                 minVariantPrice: { amount: string; currencyCode: string };
               } | null;
             };
@@ -240,10 +258,10 @@ export const shopifyApi = {
       } | null;
     }>(
       `query { collection(id: "${toGid("Collection", id)}") {
-        id title handle image { url } productsCount { count }
+        id title handle image { url }
         products(first: ${first}) { edges { node {
           id title handle featuredImage { url }
-          priceRangeV2 { minVariantPrice { amount currencyCode } }
+          priceRange { minVariantPrice { amount currencyCode } }
         } } }
       } }`
     );
@@ -254,20 +272,20 @@ export const shopifyApi = {
       title: c.title,
       handle: c.handle,
       imageUrl: c.image?.url ?? null,
-      productsCount: c.productsCount?.count ?? 0,
+      productsCount: 0,
       products: c.products.edges.map(({ node }) => ({
         id: numericId(node.id),
         title: node.title,
         handle: node.handle,
         imageUrl: node.featuredImage?.url ?? null,
-        price: money(node.priceRangeV2?.minVariantPrice ?? null),
+        price: money(node.priceRange?.minVariantPrice ?? null),
       })),
     };
   },
 
   /** A single product's detail, for preview. */
   productDetail: async (id: string): Promise<ShopifyProductDetail> => {
-    const d = await gql<{
+    const d = await storefrontGql<{
       product: {
         id: string;
         title: string;
@@ -276,7 +294,7 @@ export const shopifyApi = {
         productType: string | null;
         featuredImage: { url: string } | null;
         images: { edges: { node: { url: string } }[] };
-        priceRangeV2: {
+        priceRange: {
           minVariantPrice: { amount: string; currencyCode: string };
         } | null;
       } | null;
@@ -285,7 +303,7 @@ export const shopifyApi = {
         id title handle description productType
         featuredImage { url }
         images(first: 6) { edges { node { url } } }
-        priceRangeV2 { minVariantPrice { amount currencyCode } }
+        priceRange { minVariantPrice { amount currencyCode } }
       } }`
     );
     const p = d.product;
@@ -298,7 +316,7 @@ export const shopifyApi = {
       productType: p.productType,
       imageUrl: p.featuredImage?.url ?? null,
       images: p.images.edges.map((e) => e.node.url),
-      price: money(p.priceRangeV2?.minVariantPrice ?? null),
+      price: money(p.priceRange?.minVariantPrice ?? null),
     };
   },
 };

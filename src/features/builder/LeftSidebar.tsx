@@ -70,7 +70,9 @@ function CatalogSlot({
       imageUrl: item.imageUrl,
       meta:
         "productsCount" in item
-          ? `${(item as { productsCount: number }).productsCount} products`
+          ? (item as { productsCount: number }).productsCount > 0
+            ? `${(item as { productsCount: number }).productsCount} products`
+            : ""
           : (item as { productType: string | null }).productType ?? "",
     }))
     .filter((r) => !q || r.title.toLowerCase().includes(q));
