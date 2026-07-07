@@ -61,7 +61,7 @@ function BottomTabBar() {
   ];
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 grid grid-cols-4 border-t bg-white/95 px-2 pb-5 pt-2 backdrop-blur">
+    <div className="absolute bottom-0 left-0 right-0 z-30 grid grid-cols-4 border-t bg-white/95 px-2 pb-5 pt-2 backdrop-blur">
       {tabs.map((t) => (
         <button
           key={t.label}
