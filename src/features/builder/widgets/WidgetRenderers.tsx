@@ -481,24 +481,13 @@ export function GifBannerWidget_({ widget }: { widget: GifBannerWidget }) {
 // ── 6. Style Spotlight ────────────────────────────────────────────────────────
 
 export function StyleSpotlightWidget_({ widget }: { widget: StyleSpotlightWidget }) {
-  const { title, subtitle, data } = widget;
-  const { imageUrl, buttonText, aspectRatio = 0.75 } = data;
+  const { title, data } = widget;
+  const { imageUrl, buttonText = "VIEW ALL", aspectRatio = 0.75 } = data;
 
   return (
-    <div className="bg-white py-5">
-      {title && (
-        <h3
-          className="mb-1 text-center text-[18px] uppercase tracking-[0.15em] text-zinc-900"
-          style={{ fontFamily: DISPLAY_FONT }}
-        >
-          {title}
-        </h3>
-      )}
-      {subtitle && (
-        <p className="mb-3 text-center text-[11px] text-zinc-500">{subtitle}</p>
-      )}
+    <div className="bg-white pt-0 pb-3">
       <div
-        className="relative mx-4 overflow-hidden bg-zinc-200 cursor-pointer"
+        className="relative w-full overflow-hidden bg-zinc-200 cursor-pointer"
         style={{ paddingBottom: `${(1 / aspectRatio) * 100}%` }}
       >
         {imageUrl && (
@@ -508,15 +497,15 @@ export function StyleSpotlightWidget_({ widget }: { widget: StyleSpotlightWidget
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}
-        {/* CTA button overlay at bottom */}
-        <div className="absolute inset-x-4 bottom-4 flex justify-center">
-          <button
-            className="rounded-sm bg-white px-6 py-2 text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-900 shadow-md"
-            style={{ fontFamily: DISPLAY_FONT }}
-          >
-            {buttonText}
-          </button>
-        </div>
+      </div>
+      <div className="mt-3 flex justify-center">
+        <button
+          className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-900"
+          style={{ fontFamily: DISPLAY_FONT }}
+        >
+          {buttonText.toUpperCase()}
+          <ArrowRight className="h-4 w-4 shrink-0" />
+        </button>
       </div>
     </div>
   );

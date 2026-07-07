@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { bool, num, str } from "@/utils/json";
 import { PreviewImage, itemImage } from "./primitives";
@@ -107,6 +107,46 @@ export function BannerSection({ section, items }: SectionRendererProps) {
   const bgValue =
     str(config, "backgroundMediaValue") || str(meta, "backgroundMediaValue");
   const image = bgValue || itemImage(first ?? ({} as never)) || null;
+
+  if (section.sectionKey === "STYLE_SPOTLIGHT") {
+    const title = section.title || "";
+    const buttonText = str(config, "buttonText") || "VIEW ALL";
+    const ratioStr = config.aspectRatio;
+    let aspectRatio = 0.75;
+    if (ratioStr && typeof ratioStr === "string" && ratioStr.includes(":")) {
+      const [w, h] = ratioStr.split(":").map(Number);
+      if (w && h) aspectRatio = w / h;
+    } else if (ratioStr && typeof ratioStr === "string" && ratioStr.includes("/")) {
+      const [w, h] = ratioStr.split("/").map(Number);
+      if (w && h) aspectRatio = w / h;
+    }
+
+    return (
+      <div className="bg-white pt-0 pb-3">
+        <div
+          className="relative w-full overflow-hidden bg-zinc-200 cursor-pointer"
+          style={{ paddingBottom: `${(1 / aspectRatio) * 100}%` }}
+        >
+          {image && (
+            <img
+              src={image}
+              alt={title || "spotlight"}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+        </div>
+        <div className="mt-3 flex justify-center">
+          <button
+            className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-900"
+            style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
+          >
+            {buttonText.toUpperCase()}
+            <ArrowRight className="h-4 w-4 shrink-0" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (section.sectionKey === "TRENDING_SHOWCASE") {
     const title = section.title || "DROP IT LIKE IT'S HOT";
