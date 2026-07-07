@@ -33,6 +33,8 @@ const SECTIONS: TemplateSection[] = [
       searchPlaceholder: "Search for T Shirt",
       showDots: true,
       overlayOpacity: 0.15,
+      overlayTitle: "BEYOND",
+      overlaySubtitle: "ORDINARY",
     },
   },
   {

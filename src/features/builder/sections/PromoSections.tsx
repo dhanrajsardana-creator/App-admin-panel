@@ -1,3 +1,4 @@
+import React from "react";
 import { ArrowRight } from "lucide-react";
 import { num, str } from "@/utils/json";
 import { PreviewImage, ProductCard, itemImage } from "./primitives";
@@ -141,13 +142,13 @@ export function PromoHeroSection({ section, items }: SectionRendererProps) {
 
 /**
  * new_drop_products — light "NEW DROP" showcase: a big faded watermark behind a
- * horizontally scrolling row of product cards, each with a split price / CTA
- * pill at the bottom. Driven by items (one card each) + config.
+ * center-aligned stacked card carousel with swipe animation and a shine gloss
+ * effect on each card image. Driven by items (one card each) + config.
  */
 export function NewDropSection({ section, items }: SectionRendererProps) {
   const config = section.configJson ?? {};
   const watermark = section.title || str(config, "watermarkText") || "NEW DROP";
-  const buttonText = str(config, "buttonText") || "SHOP NOW";
+  const buttonText = str(config, "buttonText") || "SHOP THE LOOK";
   const defaultPrice = str(config, "priceLabel") || "GET IT FOR ₹599";
 
   const cards =
@@ -156,22 +157,109 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
           image: itemImage(it),
           price: it.subtitle || defaultPrice,
         }))
-      : [{ image: "/promo/new-drop-card.png", price: defaultPrice }];
+      : [
+          { image: "/promo/new-drop-card.png", price: defaultPrice },
+          { image: "/promo/new-drop-card.png", price: defaultPrice },
+          { image: "/promo/new-drop-card.png", price: defaultPrice },
+        ];
+
+  const [active, setActive] = React.useState(0);
+  const touchRef = React.useRef<{ x: number; y: number } | null>(null);
+  const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Auto-advance every 3.5s
+  React.useEffect(() => {
+    if (cards.length <= 1) return;
+    intervalRef.current = setInterval(() => {
+      setActive((prev) => (prev + 1) % cards.length);
+    }, 3500);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [cards.length]);
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    if (intervalRef.current) clearInterval(intervalRef.current);
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchRef.current.x;
+    if (Math.abs(dx) > 40) {
+      setActive((prev) =>
+        dx < 0
+          ? (prev + 1) % cards.length
+          : (prev - 1 + cards.length) % cards.length
+      );
+    }
+    touchRef.current = null;
+    // Restart auto-advance
+    if (cards.length > 1) {
+      intervalRef.current = setInterval(() => {
+        setActive((prev) => (prev + 1) % cards.length);
+      }, 3500);
+    }
+  };
+
+  /** Compute stacked-card style for position relative to active */
+  const getSlideStyle = (
+    index: number
+  ): React.CSSProperties => {
+    const total = cards.length;
+    let offset = index - active;
+    // Wrap around
+    if (offset > total / 2) offset -= total;
+    if (offset < -total / 2) offset += total;
+
+    if (offset === 0) {
+      return {
+        transform: "translateX(0) scale(1) rotateY(0deg)",
+        opacity: 1,
+        zIndex: 10,
+        position: "relative" as const,
+      };
+    }
+    const sign = offset > 0 ? 1 : -1;
+    const absOff = Math.abs(offset);
+    if (absOff <= 2) {
+      return {
+        transform: `translateX(${sign * 42 * absOff}px) scale(${1 - 0.1 * absOff}) rotateY(${-sign * 5}deg)`,
+        opacity: Math.max(0, 1 - 0.35 * absOff),
+        zIndex: 10 - absOff,
+        position: "absolute" as const,
+      };
+    }
+    return { opacity: 0, position: "absolute" as const, zIndex: 0 };
+  };
 
   return (
-    <div className="relative overflow-hidden bg-[#f5f4f2] py-6">
+    <div className="relative overflow-hidden bg-[#f5f4f2] py-8">
+      {/* Faded watermark text */}
       <span
-        className="pointer-events-none absolute inset-x-0 top-6 text-center text-[64px] uppercase leading-none text-black/[0.06]"
+        className="pointer-events-none absolute inset-x-0 top-4 text-center text-[64px] uppercase leading-none text-black/[0.06]"
         style={{ fontFamily: DISPLAY_FONT }}
       >
         {watermark}
       </span>
-      <div className="no-scrollbar relative flex gap-3 overflow-x-auto px-10 pt-12">
+
+      {/* Carousel container */}
+      <div
+        className="new-drop-carousel pt-10"
+        style={{ minHeight: 340 }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         {cards.map((c, i) => (
-          <div key={i} className="w-[210px] shrink-0">
-            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-sm bg-zinc-200">
+          <div
+            key={i}
+            className="new-drop-slide w-[210px]"
+            style={getSlideStyle(i)}
+          >
+            {/* Card image with shine effect */}
+            <div className="new-drop-card-image aspect-[3/4] w-full overflow-hidden rounded-sm bg-zinc-200">
               <PreviewImage src={c.image} className="h-full w-full" />
             </div>
+            {/* Price + CTA pill */}
             <div className="relative z-10 mx-2 -mt-5 flex items-stretch rounded-sm bg-white shadow-md">
               <span
                 className="flex-1 px-2 py-2 text-center text-[12px] uppercase tracking-wide text-zinc-700"
@@ -191,10 +279,20 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
           </div>
         ))}
       </div>
+
+      {/* Pagination dots */}
       <div className="mt-4 flex justify-center gap-1.5">
-        <span className="h-1 w-2 rounded-full bg-zinc-300" />
-        <span className="h-1 w-5 rounded-full bg-zinc-800" />
-        <span className="h-1 w-2 rounded-full bg-zinc-300" />
+        {cards.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            className={`h-1 rounded-full transition-all duration-300 ${
+              i === active
+                ? "w-5 bg-zinc-800"
+                : "w-2 bg-zinc-300 hover:bg-zinc-400"
+            }`}
+          />
+        ))}
       </div>
     </div>
   );

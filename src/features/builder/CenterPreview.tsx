@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { RefreshCw, Smartphone, MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,9 +34,20 @@ export function CenterPreview() {
   const mobile = useMobilePreview(page?.pageKey ?? null, isMobileMode);
 
   // PRODUCT-type pages preview as a real product detail page (Storefront data).
-  const isPdp =
-    !isMobileMode && page?.pageType === "PRODUCT" && ENV.shopifyEnabled;
+  const isPdp = page?.pageType === "PRODUCT" && ENV.shopifyEnabled;
   const products = useShopifyProducts();
+
+  // Scroll selected section into view inside the mobile preview frame
+  useEffect(() => {
+    if (!selectedSectionId) return;
+    const timer = setTimeout(() => {
+      const element = document.getElementById(`section-${selectedSectionId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [selectedSectionId]);
 
   const sections = useMemo(() => {
     if (isMobileMode) {
@@ -154,7 +165,7 @@ export function CenterPreview() {
           ) : isPdp ? (
             <ProductPagePreview
               sections={sections}
-              selectable
+              selectable={!isMobileMode}
               selectedSectionId={selectedSectionId}
               onSelectSection={selectSection}
             />

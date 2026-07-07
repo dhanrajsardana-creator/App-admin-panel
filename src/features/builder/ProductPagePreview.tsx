@@ -424,6 +424,7 @@ export function ProductPagePreview({
         return (
           <div
             key={section.id}
+            id={`section-${section.id}`}
             onClick={selectable ? () => onSelectSection(section.id) : undefined}
             className={cn(
               "relative border-t py-2",

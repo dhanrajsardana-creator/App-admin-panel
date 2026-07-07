@@ -33,6 +33,7 @@ export function SectionBlock({
   if (!section.isVisible) {
     return (
       <div
+        id={`section-${section.id}`}
         onClick={selectable ? onSelect : undefined}
         className={cn(
           "relative cursor-pointer",
@@ -49,6 +50,7 @@ export function SectionBlock({
 
   return (
     <div
+      id={`section-${section.id}`}
       onClick={selectable ? onSelect : undefined}
       className={cn(
         "relative",

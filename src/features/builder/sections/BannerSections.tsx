@@ -124,25 +124,37 @@ export function BannerSection({ section, items }: SectionRendererProps) {
   );
 }
 
-/** hero_carousel — full-bleed swipeable slides (rendered as a scroll-snap row). */
+/** hero_carousel — full-bleed swipeable slides with cinematic intro animation. */
 export function HeroCarouselSection({ section, items }: SectionRendererProps) {
   const config = section.configJson ?? {};
   const showDots = bool(config, "showDots", true);
-  const showSearch = bool(config, "showSearch", true) && items.length > 0;
-  const rawAspectRatio = str(config, "aspectRatio") || "3/4";
-  const aspectRatio = rawAspectRatio.replace(/\s*/g, "");
+  const showSearch = bool(config, "showSearch", true);
   const searchPlaceholder = str(config, "searchPlaceholder") || "Search for T Shirt";
+  const showBrandName = bool(config, "showBrandName", true);
+  const brandName = str(config, "brandName") || "POWERLOOK";
   const slides = items.length > 0 ? items : [null];
 
   return (
     <div className="relative w-full">
+      {/* Brand name — fades in from top */}
+      {showBrandName && (
+        <div
+          className="hero-intro-brand absolute inset-x-0 top-0 z-30 flex items-center justify-center px-4 pt-3"
+        >
+          <span
+            className="text-[10px] font-black tracking-[0.25em] text-white/90 drop-shadow-lg"
+            style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
+          >
+            ▣ {brandName}
+          </span>
+        </div>
+      )}
+
+      {/* Search bar — slides down */}
       {showSearch && (
         <div
-          className="absolute inset-x-0 top-0 z-20 px-4 pt-12"
-          style={{
-            animation: "fade-in-up 0.75s ease-out forwards",
-            animationDelay: "0.1s",
-          }}
+          className="hero-intro-search absolute inset-x-0 top-0 z-20 px-4"
+          style={{ paddingTop: showBrandName ? "2.2rem" : "3rem" }}
         >
           <div className="flex items-center gap-2 border-b border-white/30 pb-2.5 text-white/90">
             <Search className="h-4 w-4 shrink-0" />
@@ -155,6 +167,7 @@ export function HeroCarouselSection({ section, items }: SectionRendererProps) {
           </div>
         </div>
       )}
+
       <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
         {slides.map((item, i) => {
           const meta = (item?.metadataJson ?? {}) as JsonMap;
@@ -163,24 +176,97 @@ export function HeroCarouselSection({ section, items }: SectionRendererProps) {
             str(config, "backgroundMediaValue") ||
             "/figma-home/01-hero.png";
           const overlayOpacity = num(meta, "overlayOpacity", num(config, "overlayOpacity", 0.2));
+
+          // Overlay text from item → meta → config → section → default
+          const overlayTitle = item?.title || str(meta, "overlayTitle") || str(config, "overlayTitle") || section.title || "BEYOND";
+          const overlaySubtitle = item?.subtitle || str(meta, "overlaySubtitle") || str(config, "overlaySubtitle") || section.subtitle || "ORDINARY";
+          const textColor = str(meta, "textColor") || str(config, "textColor") || "#ffffff";
+
           return (
             <div
               key={item?.id ?? i}
               className="relative shrink-0 snap-center overflow-hidden bg-zinc-800"
               style={{ width: "375px", height: "812px" }}
             >
-              <PreviewImage src={image} className="h-full w-full object-top" />
-              <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
-              <OverlayContent
-                title={item?.title}
-                subtitle={item?.subtitle}
-                config={config}
-                meta={meta}
+              {/* Image with zoom-out animation */}
+              <div className="hero-intro-image h-full w-full">
+                <PreviewImage src={image} className="h-full w-full object-top" />
+              </div>
+
+              {/* Overlay darken */}
+              <div
+                className="absolute inset-0 bg-black"
+                style={{ opacity: overlayOpacity }}
               />
+
+              {/* Overlay text — reveals with stagger, positioned at bottom with line dividers */}
+              {(overlayTitle || overlaySubtitle) && (
+                <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-stretch"
+                  style={{ paddingBottom: "15%" }}
+                >
+                  {overlayTitle && (
+                    <>
+                      <div
+                        className="h-px w-full"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.25)",
+                          opacity: 0,
+                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.3s forwards",
+                        }}
+                      />
+                      <h2
+                        className="py-3 text-center text-[32px] font-extrabold uppercase leading-none drop-shadow-lg"
+                        style={{
+                          color: textColor,
+                          fontFamily: "'Bebas Neue', 'Oswald', sans-serif",
+                          letterSpacing: "0.05em",
+                          opacity: 0,
+                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.4s forwards",
+                        }}
+                      >
+                        {overlayTitle}
+                      </h2>
+                    </>
+                  )}
+                  {overlaySubtitle && (
+                    <>
+                      <div
+                        className="h-px w-full"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.25)",
+                          opacity: 0,
+                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.65s forwards",
+                        }}
+                      />
+                      <p
+                        className="py-3 text-center text-[32px] font-extrabold uppercase leading-none drop-shadow-lg"
+                        style={{
+                          color: textColor,
+                          fontFamily: "'Bebas Neue', 'Oswald', sans-serif",
+                          letterSpacing: "0.05em",
+                          opacity: 0,
+                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.8s forwards",
+                        }}
+                      >
+                        {overlaySubtitle}
+                      </p>
+                      <div
+                        className="h-px w-full"
+                        style={{
+                          backgroundColor: "rgba(255,255,255,0.25)",
+                          opacity: 0,
+                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.95s forwards",
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
+
       {showDots && slides.length > 0 && (
         <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
           {slides.map((_, i) => (

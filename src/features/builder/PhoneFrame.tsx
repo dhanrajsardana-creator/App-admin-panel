@@ -15,9 +15,15 @@ function BottomTabBar() {
 
   const homePage = (pages ?? []).find((p) => p.pageType === "HOME");
   const accountPage = (pages ?? []).find((p) => p.pageType === "ACCOUNT");
+  const collectionPage = (pages ?? []).find((p) => p.pageType === "COLLECTION");
 
   const onHome = homePage?.id === selectedPageId && !catalogPreview && !appScreen;
-  const onCategories = !!catalogPreview;
+  const onCategories =
+    !!catalogPreview ||
+    (!!collectionPage &&
+      collectionPage.id === selectedPageId &&
+      !catalogPreview &&
+      !appScreen);
   const onWishlist = appScreen === "wishlist";
   const onAccount =
     appScreen === "account" ||
@@ -34,7 +40,10 @@ function BottomTabBar() {
       icon: Grid3x3,
       label: "Categories",
       active: onCategories,
-      onClick: () => selectCatalog({ kind: "collection-index" }),
+      onClick: () =>
+        collectionPage
+          ? selectPage(collectionPage.id)
+          : selectCatalog({ kind: "collection-index" }),
     },
     {
       icon: Heart,

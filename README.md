@@ -38,7 +38,7 @@ npm install
 # 2. Configure the API base URL
 cp .env.example .env
 #   then edit .env:
-#   VITE_API_BASE_URL=https://your-host/api/v1
+#   VITE_API_BASE_URL=https://stage-api.powerlook.in/api/v1/
 
 # 3. Run
 npm run dev      # http://localhost:5173

@@ -17,7 +17,7 @@ function int(v: string | undefined, fallback: number): number {
 
 export const ENV = {
   /** CMS API base, e.g. https://host/api/v1 */
-  apiBaseUrl: e.VITE_API_BASE_URL ?? "https://YOUR_API_BASE_URL/api/v1",
+  apiBaseUrl: e.VITE_API_BASE_URL ?? "https://stage-api.powerlook.in/api/v1/",
   /** Axios request timeout (ms). */
   apiTimeout: int(e.VITE_API_TIMEOUT, 30_000),
   /** Send the ngrok interstitial bypass header (only needed for ngrok hosts). */
