@@ -126,27 +126,8 @@ export function RightPanel() {
         <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin p-4">
           {/* CONTENT */}
           <TabsContent value="content" className="mt-0 space-y-4">
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label>Section title</Label>
-                <Input
-                  value={section.title ?? ""}
-                  onChange={(e) => patchField({ title: e.target.value })}
-                  placeholder="Section heading"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Subtitle</Label>
-                <Input
-                  value={section.subtitle ?? ""}
-                  onChange={(e) => patchField({ subtitle: e.target.value })}
-                  placeholder="Optional subtitle"
-                />
-              </div>
-            </div>
-
-            {contentFields.length > 0 && (
-              <div className="space-y-3 border-t pt-4">
+            {contentFields.length > 0 ? (
+              <div className="space-y-3">
                 {contentFields.map((f) => (
                   <FieldControl
                     key={f.key}
@@ -156,6 +137,10 @@ export function RightPanel() {
                   />
                 ))}
               </div>
+            ) : (
+              <p className="text-xs text-muted-foreground text-center py-6">
+                No content settings for this section type.
+              </p>
             )}
           </TabsContent>
 

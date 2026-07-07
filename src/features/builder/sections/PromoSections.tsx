@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowRight } from "lucide-react";
-import { num, str } from "@/utils/json";
+import { num, str, bool } from "@/utils/json";
 import { PreviewImage, ProductCard, itemImage } from "./primitives";
 import type { SectionRendererProps } from "./types";
 import type { JsonMap } from "@/types";
@@ -306,12 +306,37 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
 export function ExclusiveOffersSection({ section, items }: SectionRendererProps) {
   const config = section.configJson ?? {};
   const title = section.title || "EXCLUSIVE OFFERS";
-  const bg =
-    str(config, "backgroundImage") || str(config, "backgroundMediaValue") || null;
-  const offers =
-    items.length > 0
-      ? items.map((it) => it.title || "").filter(Boolean)
-      : ["BUY 2 GET 15% OFF", "BUY 3 GET 25% OFF"];
+
+  const [currentFrameIndex, setCurrentFrameIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    if (items.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentFrameIndex((prev) => (prev + 1) % items.length);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [items.length]);
+
+  const hasItemImages = items.some((it) => itemImage(it));
+  const activeItem = items.length > 0 ? items[currentFrameIndex] : null;
+
+  const bg = hasItemImages
+    ? (activeItem ? itemImage(activeItem) : null)
+    : str(config, "backgroundImage") || str(config, "backgroundMediaValue") || null;
+
+  let offers: string[] = [];
+  if (hasItemImages && activeItem) {
+    if (activeItem.title || activeItem.subtitle) {
+      offers = [activeItem.title, activeItem.subtitle].filter(Boolean);
+    } else {
+      offers = [];
+    }
+  } else {
+    offers =
+      items.length > 0
+        ? items.map((it) => it.title || "").filter(Boolean)
+        : ["BUY 2 GET 15% OFF", "BUY 3 GET 25% OFF"];
+  }
 
   return (
     <div className="bg-white py-5">
@@ -321,20 +346,32 @@ export function ExclusiveOffersSection({ section, items }: SectionRendererProps)
       >
         {title}
       </h3>
-      <div className="relative mx-4 overflow-hidden rounded-md bg-zinc-900">
-        {bg && <PreviewImage src={bg} className="absolute inset-0 h-full w-full" />}
-        <div className="absolute inset-0 bg-gradient-to-br from-zinc-800/60 to-black/70" />
-        <div className="relative flex flex-col items-center gap-3 px-4 py-10">
-          {offers.map((o, i) => (
-            <div
-              key={i}
-              className="w-full max-w-[260px] border-y border-white/25 py-1.5 text-center text-[22px] uppercase leading-none text-white"
-              style={{ fontFamily: DISPLAY_FONT }}
-            >
-              {o}
-            </div>
-          ))}
-        </div>
+      <div className="relative mx-4 overflow-hidden rounded-md bg-zinc-900 aspect-video flex flex-col justify-center">
+        {bg && (
+          <PreviewImage
+            key={currentFrameIndex}
+            src={bg}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        <div
+          className={`absolute inset-0 transition-opacity duration-300 ${
+            offers.length === 0 ? "bg-black/5" : "bg-gradient-to-br from-zinc-800/40 to-black/60"
+          }`}
+        />
+        {offers.length > 0 && (
+          <div className="relative flex flex-col items-center gap-3 px-4 py-8">
+            {offers.map((o, i) => (
+              <div
+                key={i}
+                className="w-full max-w-[260px] border-y border-white/25 py-1.5 text-center text-[22px] uppercase leading-none text-white font-bold"
+                style={{ fontFamily: DISPLAY_FONT }}
+              >
+                {o}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
