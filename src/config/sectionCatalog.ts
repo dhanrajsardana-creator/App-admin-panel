@@ -173,7 +173,7 @@ export const SECTION_CATALOG: SectionDef[] = [
   },
   {
     type: "promo_hero",
-    label: "Promo Hero",
+    label: "Your Perfect Summer Vibe",
     description:
       "Lifestyle hero with a condensed headline, sub-heading pill and shop-the-category cards.",
     icon: Shirt,
@@ -307,7 +307,7 @@ export const SECTION_CATALOG: SectionDef[] = [
   },
   {
     type: "featured_collection_products",
-    label: "Featured Collection",
+    label: "The Collectives",
     description: "Highlighted products from a featured collection.",
     icon: Sparkles,
     defaultLayout: "FULL_WIDTH",

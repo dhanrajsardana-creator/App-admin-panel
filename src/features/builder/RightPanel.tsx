@@ -153,26 +153,7 @@ export function RightPanel() {
                 onCheckedChange={(v) => patchField({ isVisible: v })}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>Visibility platform</Label>
-              <Select
-                value={section.visibilityType ?? "BOTH"}
-                onValueChange={(v) =>
-                  patchField({ visibilityType: v as VisibilityType })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["MOBILE", "WEB", "BOTH"].map((v) => (
-                    <SelectItem key={v} value={v}>
-                      {v}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
 
             {styleFields.length > 0 ? (
               <div className="space-y-3 border-t pt-3">

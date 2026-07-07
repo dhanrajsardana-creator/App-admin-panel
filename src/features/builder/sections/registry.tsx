@@ -10,6 +10,7 @@ import {
   ProductShelfSection,
   CollectionCarouselSection,
   FeaturedCollectionSection,
+  CategoryShowcaseSection,
 } from "./ProductSections";
 import { CategoryGridSection, LookbookGridSection } from "./GridSections";
 import {
@@ -51,7 +52,7 @@ const REGISTRY: Record<string, Renderer> = {
   // Product family
   product_shelf: ProductShelfSection,
   collection_carousel: CollectionCarouselSection,
-  collection_with_products: ProductShelfSection,
+  collection_with_products: CategoryShowcaseSection,
 
   // Grid family
   category_grid: CategoryGridSection,

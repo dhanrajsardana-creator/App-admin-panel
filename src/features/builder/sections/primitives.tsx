@@ -104,12 +104,16 @@ export function ProductCard({
   badge,
   image,
   title,
+  price,
   config,
+  dark = false,
 }: {
   badge?: string | null;
   image?: string | null;
   title?: string | null;
+  price?: string | null;
   config?: JsonMap;
+  dark?: boolean;
 }) {
   const radius = Number((config?.cardBorderRadius as number) ?? 8);
   const showPrice = config?.showPrice !== false;
@@ -130,25 +134,29 @@ export function ProductCard({
           </span>
         )}
         {config?.showWishlist !== false && (
-          <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-sm bg-white/95 text-[12px] text-zinc-700 shadow-sm">
+          <span className={`absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-sm text-[12px] shadow-sm ${
+            dark ? "bg-zinc-900/90 text-white/90 border border-zinc-800" : "bg-white text-zinc-700"
+          }`}>
             ♡
           </span>
         )}
       </div>
       {showPrice && (
         <div className="mt-1.5 space-y-1 px-0.5">
-          <p className="line-clamp-1 text-[11px] text-zinc-700">
+          <p className={`line-clamp-1 text-[11px] ${dark ? "text-white/90" : "text-zinc-700"}`}>
             {title || "Powerlook Oversize T Shirt"}
           </p>
           <div className="flex items-center gap-1.5">
-            <span className="text-[13px] font-bold text-zinc-900">₹2,500</span>
-            <span className="text-[10px] text-zinc-400 line-through">₹3,200</span>
+            <span className={`text-[13px] font-bold ${dark ? "text-white" : "text-zinc-900"}`}>{price || "₹2,500"}</span>
+            <span className={`text-[10px] line-through ${dark ? "text-zinc-500" : "text-zinc-400"}`}>₹3,200</span>
             {config?.showDiscountBadge !== false && (
-              <span className="text-[10px] font-semibold text-orange-500">20% Off</span>
+              <span className={`text-[10px] font-semibold ${dark ? "text-orange-400" : "text-orange-500"}`}>20% Off</span>
             )}
           </div>
           {showMember && (
-            <span className="inline-block rounded-sm bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+            <span className={`inline-block rounded-sm px-1.5 py-0.5 text-[10px] font-medium ${
+              dark ? "bg-emerald-950/40 text-emerald-400 border border-emerald-900/40" : "bg-emerald-50 text-emerald-700"
+            }`}>
               {memberLabel} : ₹690
             </span>
           )}

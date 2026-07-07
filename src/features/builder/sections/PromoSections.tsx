@@ -4,6 +4,7 @@ import { num, str, bool } from "@/utils/json";
 import { PreviewImage, ProductCard, itemImage } from "./primitives";
 import type { SectionRendererProps } from "./types";
 import type { JsonMap } from "@/types";
+import { useShopifyCollectionDetail, useShopifyProducts } from "@/hooks/useShopify";
 
 /** Bebas Neue is loaded via index.html; condensed all-caps display face. */
 const DISPLAY_FONT = "'Bebas Neue', 'Oswald', sans-serif";
@@ -53,9 +54,9 @@ export function PromoHeroSection({ section, items }: SectionRendererProps) {
   const config = section.configJson ?? {};
   const first = items[0];
 
-  const heading = section.title || str(config, "heading") || DEFAULTS.heading;
+  const heading = str(config, "heading") || section.title || DEFAULTS.heading;
   const subheading =
-    section.subtitle || str(config, "subheadingText") || DEFAULTS.subheading;
+    str(config, "subheadingText") || section.subtitle || DEFAULTS.subheading;
   const background =
     str(config, "backgroundMediaValue") ||
     str(config, "backgroundImage") ||
@@ -151,40 +152,49 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
   const buttonText = str(config, "buttonText") || "SHOP THE LOOK";
   const defaultPrice = str(config, "priceLabel") || "GET IT FOR ₹599";
 
-  const cards =
-    items.length > 0
-      ? items.map((it) => ({
-          image: itemImage(it),
-          price: it.subtitle || defaultPrice,
-        }))
-      : [
-          { image: "/promo/new-drop-card.png", price: defaultPrice },
-          { image: "/promo/new-drop-card.png", price: defaultPrice },
-          { image: "/promo/new-drop-card.png", price: defaultPrice },
-        ];
+  const collectionItem = items.find((it) => it.referenceType === "COLLECTION");
+  const activeCollectionId = collectionItem?.referenceId || null;
+
+  const { data: collectionData } = useShopifyCollectionDetail(activeCollectionId);
+  const { data: allProducts } = useShopifyProducts();
+
+  const shopifyProducts = collectionData?.products || [];
+  const limit = collectionItem ? num(collectionItem.metadataJson, "productLimit", 5) : 5;
+
+  let cards: { image: string | null; price: string | null }[] = [];
+  if (shopifyProducts.length > 0) {
+    cards = shopifyProducts.slice(0, limit).map((p) => ({
+      image: p.imageUrl,
+      price: p.price || defaultPrice,
+    }));
+  } else if (allProducts && allProducts.length > 0) {
+    cards = allProducts.slice(0, limit).map((p) => ({
+      image: p.imageUrl,
+      price: p.price || defaultPrice,
+    }));
+  } else if (items.length > 0) {
+    cards = items.map((it) => ({
+      image: itemImage(it),
+      price: it.subtitle || defaultPrice,
+    }));
+  } else {
+    cards = [
+      { image: "/promo/new-drop-card.png", price: defaultPrice },
+      { image: "/promo/new-drop-card.png", price: defaultPrice },
+      { image: "/promo/new-drop-card.png", price: defaultPrice },
+    ];
+  }
 
   const [active, setActive] = React.useState(0);
   const touchRef = React.useRef<{ x: number; y: number } | null>(null);
-  const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Auto-advance every 3.5s
-  React.useEffect(() => {
-    if (cards.length <= 1) return;
-    intervalRef.current = setInterval(() => {
-      setActive((prev) => (prev + 1) % cards.length);
-    }, 3500);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [cards.length]);
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    if (intervalRef.current) clearInterval(intervalRef.current);
+  const startDrag = (clientX: number) => {
+    touchRef.current = { x: clientX, y: 0 };
   };
-  const onTouchEnd = (e: React.TouchEvent) => {
+
+  const endDrag = (clientX: number) => {
     if (!touchRef.current) return;
-    const dx = e.changedTouches[0].clientX - touchRef.current.x;
+    const dx = clientX - touchRef.current.x;
     if (Math.abs(dx) > 40) {
       setActive((prev) =>
         dx < 0
@@ -193,12 +203,6 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
       );
     }
     touchRef.current = null;
-    // Restart auto-advance
-    if (cards.length > 1) {
-      intervalRef.current = setInterval(() => {
-        setActive((prev) => (prev + 1) % cards.length);
-      }, 3500);
-    }
   };
 
   /** Compute stacked-card style for position relative to active */
@@ -211,25 +215,32 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
     if (offset > total / 2) offset -= total;
     if (offset < -total / 2) offset += total;
 
+    const absOff = Math.abs(offset);
+
     if (offset === 0) {
       return {
-        transform: "translateX(0) scale(1) rotateY(0deg)",
+        transform: "translateY(0) translateX(0) scale(1) rotate(0deg)",
         opacity: 1,
-        zIndex: 10,
-        position: "relative" as const,
-      };
-    }
-    const sign = offset > 0 ? 1 : -1;
-    const absOff = Math.abs(offset);
-    if (absOff <= 2) {
-      return {
-        transform: `translateX(${sign * 42 * absOff}px) scale(${1 - 0.1 * absOff}) rotateY(${-sign * 5}deg)`,
-        opacity: Math.max(0, 1 - 0.35 * absOff),
-        zIndex: 10 - absOff,
+        zIndex: 20,
         position: "absolute" as const,
+        left: "50%",
+        marginLeft: "-105px",
       };
     }
-    return { opacity: 0, position: "absolute" as const, zIndex: 0 };
+
+    if (absOff <= 2) {
+      // Tilt counter-clockwise if on the left, clockwise if on the right (2D Z-rotation)
+      // Shifted downwards by 48px, outwards by 245px, scaled down to 0.7, and fully opaque
+      return {
+        transform: `translateY(${absOff * 48}px) translateX(${offset * 245}px) scale(${1 - 0.3 * absOff}) rotate(${offset * 17}deg)`,
+        opacity: 1,
+        zIndex: 20 - absOff,
+        position: "absolute" as const,
+        left: "50%",
+        marginLeft: "-105px",
+      };
+    }
+    return { opacity: 0, position: "absolute" as const, zIndex: 0, left: "50%", marginLeft: "-105px" };
   };
 
   return (
@@ -244,16 +255,20 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
 
       {/* Carousel container */}
       <div
-        className="new-drop-carousel pt-10"
-        style={{ minHeight: 340 }}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+        className="new-drop-carousel pt-10 select-none cursor-grab active:cursor-grabbing"
+        style={{ minHeight: 360 }}
+        onTouchStart={(e) => startDrag(e.touches[0].clientX)}
+        onTouchEnd={(e) => endDrag(e.changedTouches[0].clientX)}
+        onMouseDown={(e) => startDrag(e.clientX)}
+        onMouseUp={(e) => endDrag(e.clientX)}
+        onMouseLeave={() => { touchRef.current = null; }}
       >
         {cards.map((c, i) => (
           <div
             key={i}
-            className="new-drop-slide w-[210px]"
+            className="new-drop-slide w-[210px] cursor-pointer"
             style={getSlideStyle(i)}
+            onClick={() => setActive(i)}
           >
             {/* Card image with shine effect */}
             <div className="new-drop-card-image aspect-[3/4] w-full overflow-hidden rounded-sm bg-zinc-200">

@@ -10,11 +10,13 @@ import { useSections } from "@/hooks/useSections";
 import { useMobilePreview } from "@/hooks/useMobilePreview";
 import { useShopifyProducts } from "@/hooks/useShopify";
 import { ENV } from "@/config/env";
+import { bffAdapter } from "@/helpers/bffAdapter";
 import { PhoneFrame } from "./PhoneFrame";
 import { SectionBlock } from "./SectionBlock";
 import { CatalogPreview } from "./CatalogPreview";
 import { ProductPagePreview } from "./ProductPagePreview";
 import { AppScreenPreview } from "./AppScreenPreview";
+import { WidgetRenderer } from "./widgets/WidgetRenderers";
 
 export function CenterPreview() {
   const selectedPageId = useBuilderStore((s) => s.selectedPageId);
@@ -49,14 +51,22 @@ export function CenterPreview() {
     return () => clearTimeout(timer);
   }, [selectedSectionId]);
 
-  const sections = useMemo(() => {
-    if (isMobileMode) {
-      return [...(mobile.data?.sections ?? [])].sort(
-        (a, b) => a.sortOrder - b.sortOrder
-      );
-    }
+  // Draft mode: raw sections sorted by sortOrder (unchanged behaviour).
+  const draftSectionsSorted = useMemo(() => {
     return [...(draftSections ?? [])].sort((a, b) => a.sortOrder - b.sortOrder);
-  }, [isMobileMode, mobile.data, draftSections]);
+  }, [draftSections]);
+
+  // Mobile mode: sections sorted → run through bffAdapter → UIWidget[].
+  // This is the SAME pipeline the real mobile app uses:
+  //   BFFSection[] → bffAdapter.sectionToWidget() → UIWidget[] → WidgetRenderer
+  const mobileWidgets = useMemo(() => {
+    const rawSections = [...(mobile.data?.sections ?? [])].sort(
+      (a, b) => a.sortOrder - b.sortOrder
+    );
+    return rawSections
+      .map((section) => bffAdapter.sectionToWidget(section))
+      .filter((w): w is NonNullable<typeof w> => w !== null);
+  }, [mobile.data]);
 
   // A static app screen (wishlist/account) opened from the bottom tab bar.
   if (appScreen) {
@@ -164,12 +174,32 @@ export function CenterPreview() {
             <FullSpinner label="Loading preview…" />
           ) : isPdp ? (
             <ProductPagePreview
-              sections={sections}
+              sections={draftSectionsSorted}
               selectable={!isMobileMode}
               selectedSectionId={selectedSectionId}
               onSelectSection={selectSection}
             />
-          ) : sections.length === 0 ? (
+          ) : isMobileMode ? (
+            // ── Live Mobile API mode ─────────────────────────────────────────
+            // Sections go through bffAdapter → UIWidget → WidgetRenderer,
+            // exactly mirroring the real mobile app's rendering pipeline.
+            mobileWidgets.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 px-6 py-20 text-center">
+                <MousePointerClick className="h-8 w-8 text-zinc-300" />
+                <p className="text-sm font-medium text-zinc-500">
+                  No widgets returned by the mobile API
+                </p>
+                <p className="text-xs text-zinc-400">
+                  Make sure this page is published and has sections configured.
+                </p>
+              </div>
+            ) : (
+              mobileWidgets.map((widget) => (
+                <WidgetRenderer key={widget.id} widget={widget} />
+              ))
+            )
+          ) : draftSectionsSorted.length === 0 ? (
+            // ── Draft preview mode ───────────────────────────────────────────
             <div className="flex flex-col items-center justify-center gap-2 px-6 py-20 text-center">
               <MousePointerClick className="h-8 w-8 text-zinc-300" />
               <p className="text-sm font-medium text-zinc-500">
@@ -180,13 +210,13 @@ export function CenterPreview() {
               </p>
             </div>
           ) : (
-            sections.map((section) => (
+            draftSectionsSorted.map((section) => (
               <SectionBlock
                 key={section.id}
                 section={section}
-                embeddedItems={isMobileMode ? section.items ?? [] : undefined}
-                selectable={!isMobileMode}
-                selected={!isMobileMode && selectedSectionId === section.id}
+                embeddedItems={undefined}
+                selectable={true}
+                selected={selectedSectionId === section.id}
                 onSelect={() => selectSection(section.id)}
               />
             ))

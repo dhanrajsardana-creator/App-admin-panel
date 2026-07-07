@@ -4,6 +4,7 @@ import { bool, num, str } from "@/utils/json";
 import { PreviewImage, itemImage } from "./primitives";
 import type { SectionRendererProps } from "./types";
 import type { JsonMap } from "@/types";
+import { useShopifyCollectionDetail } from "@/hooks/useShopify";
 
 function textPositionClasses(pos: string) {
   switch (pos) {
@@ -106,6 +107,165 @@ export function BannerSection({ section, items }: SectionRendererProps) {
   const bgValue =
     str(config, "backgroundMediaValue") || str(meta, "backgroundMediaValue");
   const image = bgValue || itemImage(first ?? ({} as never)) || null;
+
+  if (section.sectionKey === "TRENDING_SHOWCASE") {
+    const title = section.title || "DROP IT LIKE IT'S HOT";
+    const subtitle = section.subtitle || "The hottest styles, picked from what you love, curated into fresh collections for your vibe.";
+    const gridImageUrl = image || "/figma-home/07-banner-a.png";
+    return (
+      <div
+        className="py-6"
+        style={{
+          backgroundColor: "#f7f7f7",
+          backgroundImage: "repeating-linear-gradient(-45deg, transparent, transparent 6px, #f0f0f0 6px, #f0f0f0 12px)"
+        }}
+      >
+        {/* Header */}
+        <div className="mb-4 px-4 text-center">
+          <h3
+            className="text-[26px] uppercase tracking-[0.06em] text-zinc-900 font-extrabold"
+            style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
+          >
+            {title}
+          </h3>
+          {subtitle && (
+            <p className="mt-2 text-[11px] text-zinc-500 leading-relaxed max-w-[290px] mx-auto">
+              {subtitle}
+            </p>
+          )}
+        </div>
+
+        {/* Card Box */}
+        <div className="mx-4 bg-white rounded-[24px] p-3 shadow-[0_6px_24px_rgba(0,0,0,0.06)] cursor-pointer">
+          <div className="aspect-[4/5] w-full overflow-hidden rounded-[16px] bg-zinc-100">
+            <img src={gridImageUrl} alt={title} className="h-full w-full object-cover" />
+          </div>
+        </div>
+
+        {/* View All Button */}
+        <div className="mt-4 border-y border-zinc-200/60 py-3.5">
+          <button className="flex w-full items-center justify-center gap-1.5 text-[10px] font-bold tracking-[0.15em] text-zinc-800 uppercase">
+            VIEW ALL →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (section.sectionKey === "DEALS_SHOWCASE") {
+    const title = section.title || "IRRESISTIBLE DEALS";
+
+    // Find COLLECTION item
+    const collectionItem = items.find(
+      (item) => item.referenceType === "COLLECTION"
+    );
+    
+    const activeCollectionId = collectionItem?.referenceId || null;
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { data: collectionData } = useShopifyCollectionDetail(activeCollectionId);
+    const productsToRender = collectionData?.products || [];
+
+    const heroImageUrl =
+      str(config, "backgroundMediaValue") ||
+      collectionItem?.imageUrl ||
+      "/figma-home/12-irresistible-deals.png"; // fallback
+
+    const ctaText = collectionItem?.metadataJson?.buttonText as string | undefined;
+
+    const dealItems = productsToRender.map((product: any) => {
+      return {
+        id: product.id,
+        imageUrl: product.imageUrl,
+        priceText: ctaText || `GET IT FOR ₹${product.price || "599"}`,
+      };
+    });
+
+    // If no items are resolved yet in DB (e.g. template initial state), show mock items
+    const displayItems = dealItems.length > 0 ? dealItems : [
+      { id: "mock-1", imageUrl: "/figma-home/07-banner-a.png", priceText: "GET IT FOR ₹599" },
+      { id: "mock-2", imageUrl: "/figma-home/09-banner-b.png", priceText: "GET IT FOR ₹599" },
+      { id: "mock-3", imageUrl: "/figma-home/10-category-banner-1.png", priceText: "GET IT FOR ₹599" },
+    ];
+
+    return (
+      <div className="bg-[#f0f6f7]">
+        {/* Hero zone */}
+        <div
+          className="relative flex items-center justify-center overflow-hidden bg-[#e8f3f5]"
+          style={{ minHeight: 260 }}
+        >
+          {/* SVG decorative lines pattern */}
+          <svg className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none">
+            <line x1="0" y1="20" x2="33%" y2="120" stroke="#BEDADF" strokeWidth="1.2" />
+            <line x1="33%" y1="120" x2="33%" y2="100%" stroke="#BEDADF" strokeWidth="1.2" />
+            <line x1="5%" y1="20" x2="38%" y2="120" stroke="#BEDADF" strokeWidth="1.2" />
+            <line x1="38%" y1="120" x2="38%" y2="100%" stroke="#BEDADF" strokeWidth="1.2" />
+            <line x1="100%" y1="20" x2="67%" y2="120" stroke="#BEDADF" strokeWidth="1.2" />
+            <line x1="67%" y1="120" x2="67%" y2="100%" stroke="#BEDADF" strokeWidth="1.2" />
+            <line x1="95%" y1="20" x2="62%" y2="120" stroke="#BEDADF" strokeWidth="1.2" />
+            <line x1="62%" y1="120" x2="62%" y2="100%" stroke="#BEDADF" strokeWidth="1.2" />
+          </svg>
+
+          {/* Spotlight glow */}
+          <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full bg-white/30 blur-3xl" />
+
+          {/* Hero model/product image */}
+          {heroImageUrl && (
+            <img
+              src={heroImageUrl}
+              alt="deals hero"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+
+          {/* Section title */}
+          {title && (
+            <div className="absolute inset-x-0 top-4 flex justify-center px-4 z-20">
+              <h3
+                className="text-[24px] uppercase text-zinc-800 font-extrabold"
+                style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif", letterSpacing: "0.1em" }}
+              >
+                {title}
+              </h3>
+            </div>
+          )}
+        </div>
+
+        {/* Rotating text / subtitle */}
+        {section.subtitle && (
+          <div className="flex justify-center py-2 bg-white border-b border-zinc-100">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-600">
+              {section.subtitle}
+            </span>
+          </div>
+        )}
+
+        {/* Horizontal deal cards */}
+        <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-5 pt-3 bg-white">
+          {displayItems.map((item) => (
+            <div key={item.id} className="w-[140px] shrink-0 cursor-pointer">
+              <div className="aspect-[3/4] overflow-hidden rounded-sm bg-zinc-200 shadow">
+                <img src={item.imageUrl} alt={item.priceText} className="h-full w-full object-cover" />
+              </div>
+              <p
+                className="mt-1.5 text-center text-[11px] uppercase leading-tight text-zinc-700 font-semibold"
+                style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
+              >
+                {item.priceText}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* View All */}
+        <div className="flex justify-center border-t border-zinc-100 py-3.5 bg-white">
+          <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-800">
+            VIEW ALL →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative aspect-[4/5] w-full overflow-hidden bg-zinc-900">

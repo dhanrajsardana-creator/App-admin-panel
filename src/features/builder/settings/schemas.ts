@@ -40,6 +40,14 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   banner: { fields: bannerFields },
   featured_collection_products: { fields: bannerFields },
 
+  promo_hero: {
+    fields: [
+      { kind: "text", key: "heading", label: "Heading text", group: "content" },
+      { kind: "text", key: "subheadingText", label: "Subheading text", group: "content" },
+      { kind: "file", key: "backgroundMediaValue", label: "Background image", group: "content" },
+    ],
+  },
+
   new_drop_products: {
     fields: [
       { kind: "text", key: "priceLabel", label: "Price label (default)", group: "content" },
