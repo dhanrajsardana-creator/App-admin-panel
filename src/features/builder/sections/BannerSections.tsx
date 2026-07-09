@@ -185,7 +185,7 @@ export function BannerSection({ section, items }: SectionRendererProps) {
         {/* View All Button */}
         <div className="mt-4 border-y border-zinc-200/60 py-3.5">
           <button className="flex w-full items-center justify-center gap-1.5 text-[10px] font-bold tracking-[0.15em] text-zinc-800 uppercase">
-            VIEW ALL →
+            {str(config, "buttonText") || "VIEW ALL"} →
           </button>
         </div>
       </div>
@@ -210,9 +210,10 @@ export function BannerSection({ section, items }: SectionRendererProps) {
       collectionItem?.imageUrl ||
       "/figma-home/12-irresistible-deals.png"; // fallback
 
-    const ctaText = collectionItem?.metadataJson?.buttonText as string | undefined;
+    const ctaText = str(config, "buttonText") || (collectionItem?.metadataJson?.buttonText as string | undefined);
+    const maxItems = num(config, "maxItems", 5);
 
-    const dealItems = productsToRender.map((product: any) => {
+    const dealItems = productsToRender.slice(0, maxItems).map((product: any) => {
       return {
         id: product.id,
         imageUrl: product.imageUrl,
@@ -222,10 +223,10 @@ export function BannerSection({ section, items }: SectionRendererProps) {
 
     // If no items are resolved yet in DB (e.g. template initial state), show mock items
     const displayItems = dealItems.length > 0 ? dealItems : [
-      { id: "mock-1", imageUrl: "/figma-home/07-banner-a.png", priceText: "GET IT FOR ₹599" },
-      { id: "mock-2", imageUrl: "/figma-home/09-banner-b.png", priceText: "GET IT FOR ₹599" },
-      { id: "mock-3", imageUrl: "/figma-home/10-category-banner-1.png", priceText: "GET IT FOR ₹599" },
-    ];
+      { id: "mock-1", imageUrl: "/figma-home/07-banner-a.png", priceText: ctaText || "GET IT FOR ₹599" },
+      { id: "mock-2", imageUrl: "/figma-home/09-banner-b.png", priceText: ctaText || "GET IT FOR ₹599" },
+      { id: "mock-3", imageUrl: "/figma-home/10-category-banner-1.png", priceText: ctaText || "GET IT FOR ₹599" },
+    ].slice(0, maxItems);
 
     return (
       <div className="bg-[#f2f4f5]">

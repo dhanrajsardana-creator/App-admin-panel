@@ -179,8 +179,8 @@ export function FeaturedCollectionSection({ section, items }: SectionRendererPro
   const config = section.configJson ?? {};
 
   const overlayingTexts = (section.configJson?.overlayingTexts as string[]) || [];
-  const title = overlayingTexts[0] || section.title || "THE COLLECTIVES";
-  const subtitle = overlayingTexts[1] || section.subtitle || "GET THE VIBE";
+  const title = section.title || overlayingTexts[0] || "THE COLLECTIVES";
+  const subtitle = section.subtitle || overlayingTexts[1] || "GET THE VIBE";
   const rawBadge = overlayingTexts[2] || "₹799";
 
   let badgeText = "₹799";
@@ -202,7 +202,11 @@ export function FeaturedCollectionSection({ section, items }: SectionRendererPro
     firstItem?.imageUrl ||
     "/figma-home/13-z-collective.png"; // fallback
 
-  const displayProducts = productsToRender.slice(0, 9);
+  const maxItems = num(config, "maxItems", 9);
+  const columns = num(config, "columns", 3);
+  const buttonText = str(config, "buttonText") || "View All";
+
+  const displayProducts = productsToRender.slice(0, maxItems);
 
   return (
     <div className="bg-white pb-5">
@@ -249,13 +253,19 @@ export function FeaturedCollectionSection({ section, items }: SectionRendererPro
 
       {/* Grid of collection products */}
       {isLoading && displayProducts.length === 0 ? (
-        <div className="mt-3 grid grid-cols-3 gap-1 px-1 bg-white">
-          {Array.from({ length: 6 }).map((_, idx) => (
+        <div 
+          className="mt-3 grid gap-1 px-1 bg-white"
+          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+        >
+          {Array.from({ length: columns * 2 }).map((_, idx) => (
             <div key={idx} className="aspect-[3/4] w-full animate-pulse bg-zinc-100" />
           ))}
         </div>
       ) : displayProducts.length > 0 ? (
-        <div className="mt-3 grid grid-cols-3 gap-1 px-1 bg-white">
+        <div 
+          className="mt-3 grid gap-1 px-1 bg-white"
+          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+        >
           {displayProducts.map((p) => (
             <div key={p.id} className="relative aspect-[3/4] cursor-pointer overflow-hidden bg-zinc-100">
               <img
@@ -267,8 +277,11 @@ export function FeaturedCollectionSection({ section, items }: SectionRendererPro
           ))}
         </div>
       ) : (
-        <div className="mt-3 grid grid-cols-3 gap-1 px-1 bg-white">
-          {Array.from({ length: 6 }).map((_, idx) => (
+        <div 
+          className="mt-3 grid gap-1 px-1 bg-white"
+          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+        >
+          {Array.from({ length: columns * 2 }).map((_, idx) => (
             <div key={idx} className="aspect-[3/4] w-full bg-zinc-100 flex items-center justify-center text-[10px] text-zinc-400">
               No product
             </div>
@@ -279,7 +292,7 @@ export function FeaturedCollectionSection({ section, items }: SectionRendererPro
       {/* View All Button */}
       <div className="mt-5 flex justify-center px-4 bg-white">
         <button className="w-full border border-zinc-200/80 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-800 hover:bg-zinc-50 flex items-center justify-center gap-1.5 bg-zinc-50/50">
-          View All <span className="text-[14px]">→</span>
+          {buttonText} <span className="text-[14px]">→</span>
         </button>
       </div>
     </div>
