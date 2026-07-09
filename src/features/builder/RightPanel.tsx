@@ -154,6 +154,24 @@ export function RightPanel() {
               />
             </div>
 
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <Label className="text-sm text-foreground">Dark mode</Label>
+              <Switch
+                checked={config.theme === "dark" || !!config.isDark}
+                onCheckedChange={(v) => {
+                  if (!section) return;
+                  const nextConfig = {
+                    ...(section.configJson ?? {}),
+                    theme: v ? "dark" : "light",
+                    isDark: v,
+                  };
+                  patchCache(section.id, { configJson: nextConfig });
+                  pending.current = { ...pending.current, configJson: nextConfig };
+                  flush();
+                }}
+              />
+            </div>
+
 
             {styleFields.length > 0 ? (
               <div className="space-y-3 border-t pt-3">

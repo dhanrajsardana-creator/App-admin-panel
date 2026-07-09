@@ -715,7 +715,7 @@ export function TrendsCollageWidget_({ widget }: { widget: TrendsCollageWidget }
 
 export function IrresistibleDealsWidget_({ widget }: { widget: IrresistibleDealsWidget }) {
   const { title, data } = widget;
-  const { heroImageUrl, items, viewAllAction, rotatingTexts, fullWidthHero } = data;
+  const { heroImageUrl, items, viewAllAction, rotatingTexts } = data;
   const [rotIdx, setRotIdx] = useState(0);
 
   useEffect(() => {
@@ -725,14 +725,11 @@ export function IrresistibleDealsWidget_({ widget }: { widget: IrresistibleDeals
   }, [rotatingTexts]);
 
   return (
-    <div className="bg-[#f0f6f7]">
+    <div className="bg-[#f2f4f5]">
       {/* Hero zone */}
-      <div
-        className="relative flex items-center justify-center overflow-hidden bg-[#e8f3f5]"
-        style={{ minHeight: fullWidthHero ? undefined : 260, aspectRatio: fullWidthHero ? "1/1" : undefined }}
-      >
+      <div className="relative w-full overflow-hidden bg-[#e8f3f5]">
         {/* SVG decorative lines pattern */}
-        <svg className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none">
+        <svg className="pointer-events-none absolute inset-0 h-full w-full z-0" preserveAspectRatio="none">
           <line x1="0" y1="20" x2="33%" y2="120" stroke="#BEDADF" strokeWidth="1.2" />
           <line x1="33%" y1="120" x2="33%" y2="100%" stroke="#BEDADF" strokeWidth="1.2" />
           <line x1="5%" y1="20" x2="38%" y2="120" stroke="#BEDADF" strokeWidth="1.2" />
@@ -744,23 +741,27 @@ export function IrresistibleDealsWidget_({ widget }: { widget: IrresistibleDeals
         </svg>
 
         {/* Spotlight glow */}
-        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full bg-white/30 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full bg-white/30 blur-3xl z-0" />
 
         {/* Hero model/product image */}
-        {heroImageUrl && (
+        {heroImageUrl ? (
           <img
             src={heroImageUrl}
             alt="deals hero"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="relative z-10 w-full h-auto object-cover block"
           />
+        ) : (
+           <div className="relative z-10 w-full h-[300px] bg-zinc-200" />
         )}
 
         {/* Section title */}
-        {title && (
-          <div className="absolute inset-x-0 top-4 flex justify-center px-4 z-20">
+        {title && 
+          !heroImageUrl?.toLowerCase().includes("irresistible") && 
+          !heroImageUrl?.toLowerCase().includes("figma-home") && (
+          <div className="absolute inset-x-0 top-8 flex justify-center px-4 z-20">
             <h3
-              className="text-[24px] uppercase text-zinc-800"
-              style={{ fontFamily: DISPLAY_FONT, letterSpacing: "0.1em" }}
+              className="text-[28px] uppercase text-zinc-900 font-extrabold"
+              style={{ fontFamily: DISPLAY_FONT, letterSpacing: "0.05em" }}
             >
               {title}
             </h3>
@@ -778,26 +779,28 @@ export function IrresistibleDealsWidget_({ widget }: { widget: IrresistibleDeals
       )}
 
       {/* Horizontal deal cards */}
-      <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-5 pt-1">
+      <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-6 pt-2">
         {items.map((item) => (
-          <div key={item.id} className="w-[140px] shrink-0 cursor-pointer">
-            <div className="aspect-[3/4] overflow-hidden rounded-sm bg-zinc-200 shadow">
+          <div key={item.id} className="w-[140px] shrink-0 cursor-pointer bg-white">
+            <div className="aspect-[3/4] overflow-hidden bg-zinc-100">
               <Img src={item.imageUrl} alt={item.priceText} />
             </div>
-            <p
-              className="mt-1.5 text-center text-[11px] uppercase leading-tight text-zinc-700"
-              style={{ fontFamily: DISPLAY_FONT }}
-            >
-              {item.priceText}
-            </p>
+            <div className="py-2.5 flex justify-center items-center">
+              <p
+                className="text-center text-[12px] uppercase leading-tight text-zinc-800 font-bold"
+                style={{ fontFamily: DISPLAY_FONT, letterSpacing: "0.05em" }}
+              >
+                {item.priceText}
+              </p>
+            </div>
           </div>
         ))}
       </div>
 
       {/* View All */}
       {viewAllAction && (
-        <div className="flex justify-center border-t border-zinc-200 py-3">
-          <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-800">
+        <div className="flex justify-center py-4 border-t border-zinc-200/50">
+          <button className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-zinc-800">
             VIEW ALL <ArrowRight className="h-3 w-3" />
           </button>
         </div>
@@ -809,8 +812,7 @@ export function IrresistibleDealsWidget_({ widget }: { widget: IrresistibleDeals
 // ── 11. Category Showcase ─────────────────────────────────────────────────────
 
 export function CategoryShowcaseWidget_({ widget }: { widget: CategoryShowcaseWidget }) {
-  const { data } = widget;
-  const { categoryName, productCountText, bannerImageUrl, products, viewAllAction } = data;
+  const { categoryName, productCountText, bannerImageUrl, products, viewAllAction, buttonText } = data;
 
   // Map fallback banner image based on title
   const bannerSlug = categoryName.toLowerCase();
@@ -883,7 +885,7 @@ export function CategoryShowcaseWidget_({ widget }: { widget: CategoryShowcaseWi
       {viewAllAction && (
         <div className="border-y border-white/10 py-3.5 bg-[#121212]">
           <button className="flex w-full items-center justify-center gap-1.5 text-[10px] font-bold tracking-[0.15em] text-white uppercase">
-            VIEW ALL {categoryName.toUpperCase()} →
+            {buttonText || `VIEW ALL ${categoryName}`} →
           </button>
         </div>
       )}

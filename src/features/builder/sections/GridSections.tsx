@@ -8,9 +8,7 @@ export function CategoryGridSection({ section, items }: SectionRendererProps) {
   const config = section.configJson ?? {};
   const columns = Math.min(Math.max(num(config, "columns", 4), 2), 5);
   const gap = num(config, "gap", 8);
-  const circle = str(config, "imageShape", "circle") === "circle";
   const showLabel = bool(config, "showLabel", true);
-  const textAlign = str(config, "textAlign") || "left";
   const tiles =
     items.length > 0 ? items : Array.from({ length: columns * 2 }, () => null);
 
@@ -18,10 +16,9 @@ export function CategoryGridSection({ section, items }: SectionRendererProps) {
     <div className="py-3">
       {bool(config, "showSectionTitle", true) && (
         <SectionHeading
-          title={section.title}
-          align={textAlign as "left" | "center"}
-          showViewAll={bool(config, "showViewAll")}
-          viewAllText={str(config, "viewAllText", "View all")}
+          title={str(config, "title") || section.title}
+          align="left"
+          showViewAll={false}
         />
       )}
       <div
@@ -34,10 +31,7 @@ export function CategoryGridSection({ section, items }: SectionRendererProps) {
         {tiles.map((it, i) => (
           <div key={it?.id ?? i} className="flex flex-col items-center gap-1">
             <div
-              className={cn(
-                "relative w-full overflow-hidden bg-zinc-100",
-                circle ? "aspect-square rounded-full" : "aspect-square rounded-lg"
-              )}
+              className="relative w-full overflow-hidden bg-zinc-100 aspect-square rounded-lg"
             >
               <PreviewImage src={it ? itemImage(it) : null} className="h-full w-full" />
               {it?.badgeText && (

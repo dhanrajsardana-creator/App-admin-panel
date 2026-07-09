@@ -228,14 +228,11 @@ export function BannerSection({ section, items }: SectionRendererProps) {
     ];
 
     return (
-      <div className="bg-[#f0f6f7]">
+      <div className="bg-[#f2f4f5]">
         {/* Hero zone */}
-        <div
-          className="relative flex items-center justify-center overflow-hidden bg-[#e8f3f5]"
-          style={{ minHeight: 260 }}
-        >
+        <div className="relative w-full overflow-hidden bg-[#e8f3f5]">
           {/* SVG decorative lines pattern */}
-          <svg className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none">
+          <svg className="pointer-events-none absolute inset-0 h-full w-full z-0" preserveAspectRatio="none">
             <line x1="0" y1="20" x2="33%" y2="120" stroke="#BEDADF" strokeWidth="1.2" />
             <line x1="33%" y1="120" x2="33%" y2="100%" stroke="#BEDADF" strokeWidth="1.2" />
             <line x1="5%" y1="20" x2="38%" y2="120" stroke="#BEDADF" strokeWidth="1.2" />
@@ -247,23 +244,27 @@ export function BannerSection({ section, items }: SectionRendererProps) {
           </svg>
 
           {/* Spotlight glow */}
-          <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full bg-white/30 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 h-48 w-48 rounded-full bg-white/30 blur-3xl z-0" />
 
           {/* Hero model/product image */}
-          {heroImageUrl && (
+          {heroImageUrl ? (
             <img
               src={heroImageUrl}
               alt="deals hero"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="relative z-10 w-full h-auto object-cover block"
             />
+          ) : (
+             <div className="relative z-10 w-full h-[300px] bg-zinc-200" />
           )}
 
-          {/* Section title */}
-          {title && (
-            <div className="absolute inset-x-0 top-4 flex justify-center px-4 z-20">
+          {/* Section title, render only if image doesn't naturally contain it */}
+          {title && 
+            !heroImageUrl?.toLowerCase().includes("irresistible") && 
+            !heroImageUrl?.toLowerCase().includes("figma-home") && (
+            <div className="absolute inset-x-0 top-8 flex justify-center px-4 z-20">
               <h3
-                className="text-[24px] uppercase text-zinc-800 font-extrabold"
-                style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif", letterSpacing: "0.1em" }}
+                className="text-[28px] uppercase text-zinc-900 font-extrabold"
+                style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif", letterSpacing: "0.05em" }}
               >
                 {title}
               </h3>
@@ -273,7 +274,7 @@ export function BannerSection({ section, items }: SectionRendererProps) {
 
         {/* Rotating text / subtitle */}
         {section.subtitle && (
-          <div className="flex justify-center py-2 bg-white border-b border-zinc-100">
+          <div className="flex justify-center py-2">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-600">
               {section.subtitle}
             </span>
@@ -281,25 +282,27 @@ export function BannerSection({ section, items }: SectionRendererProps) {
         )}
 
         {/* Horizontal deal cards */}
-        <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-5 pt-3 bg-white">
+        <div className="no-scrollbar flex gap-3 overflow-x-auto px-4 pb-6 pt-2">
           {displayItems.map((item) => (
-            <div key={item.id} className="w-[140px] shrink-0 cursor-pointer">
-              <div className="aspect-[3/4] overflow-hidden rounded-sm bg-zinc-200 shadow">
+            <div key={item.id} className="w-[140px] shrink-0 cursor-pointer bg-white">
+              <div className="aspect-[3/4] overflow-hidden bg-zinc-100">
                 <img src={item.imageUrl} alt={item.priceText} className="h-full w-full object-cover" />
               </div>
-              <p
-                className="mt-1.5 text-center text-[11px] uppercase leading-tight text-zinc-700 font-semibold"
-                style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
-              >
-                {item.priceText}
-              </p>
+              <div className="py-2.5 flex justify-center items-center">
+                <p
+                  className="text-center text-[12px] uppercase leading-tight text-zinc-800 font-bold"
+                  style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif", letterSpacing: "0.05em" }}
+                >
+                  {item.priceText}
+                </p>
+              </div>
             </div>
           ))}
         </div>
 
         {/* View All */}
-        <div className="flex justify-center border-t border-zinc-100 py-3.5 bg-white">
-          <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-800">
+        <div className="flex justify-center py-4 border-t border-zinc-200/50">
+          <button className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-zinc-800">
             VIEW ALL →
           </button>
         </div>

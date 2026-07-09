@@ -1,4 +1,4 @@
-import { Search, Mic, Camera } from "lucide-react";
+import { Search, Mic, Camera, Truck, Clock, Heart } from "lucide-react";
 import { bool, num, str } from "@/utils/json";
 import type { SectionRendererProps } from "./types";
 
@@ -115,13 +115,88 @@ export function RichTextSection({ section }: SectionRendererProps) {
 
 /** services_information — trust badges / service highlights row. */
 export function ServicesSection({ section, items }: SectionRendererProps) {
+  const firstItem = items[0];
+  const overlayingTexts = firstItem?.metadataJson?.overlayingTexts as string[] | undefined;
+  const backgroundImageUrl = firstItem?.metadataJson?.backgroundMediaValue as string | undefined;
+
+  if (overlayingTexts && overlayingTexts.length > 0) {
+    const title = firstItem?.title || section.title || "WHAT EXTRA DO WE OFFER";
+    return (
+      <div className="relative overflow-hidden aspect-square w-full bg-zinc-950 flex flex-col justify-between py-6 px-4 text-white">
+        {/* Background Image with Dark Gradient Overlay */}
+        {backgroundImageUrl && (
+          <>
+            <img
+              src={backgroundImageUrl}
+              alt="value props background"
+              className="absolute inset-0 h-full w-full object-cover opacity-60"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/85" />
+          </>
+        )}
+
+        {/* Section Header */}
+        <div className="relative z-10 text-center mt-4">
+          <h3 
+            className="text-[17px] font-extrabold uppercase tracking-[0.1em] text-white"
+            style={{ fontFamily: "Impact, 'Arial Black', sans-serif" }}
+          >
+            {title}
+          </h3>
+        </div>
+
+        {/* Bottom Offerings Card */}
+        <div className="relative z-10 bg-[#0c0c0cf2] border border-white/5 py-5 px-1 rounded-[4px] grid grid-cols-3 divide-x divide-white/10 text-center">
+          {overlayingTexts.map((text, i) => {
+            const textLower = text.toLowerCase();
+            let IconComponent = Heart;
+            if (textLower.includes("shipping") || textLower.includes("delivery")) {
+              IconComponent = Truck;
+            } else if (textLower.includes("dispatch") || textLower.includes("24 hours") || textLower.includes("clock")) {
+              IconComponent = Clock;
+            }
+
+            // Split label into Title / Subtitle segments
+            let titlePart = text;
+            let subtitlePart = "";
+            if (textLower.includes("shipping")) {
+              titlePart = "Free Shipping";
+              subtitlePart = "n all orders";
+            } else if (textLower.includes("dispatch")) {
+              titlePart = "Order Dispatch";
+              subtitlePart = "in 24 hours";
+            } else if (textLower.includes("trusted")) {
+              titlePart = "Trusted by 2M+";
+              subtitlePart = "Happy Customers";
+            }
+
+            return (
+              <div key={i} className="flex flex-col items-center justify-center px-1">
+                <IconComponent className="h-5 w-5 text-white/90 mb-2 stroke-[1.25]" />
+                <span className="text-[10px] font-semibold text-white/90 leading-tight">
+                  {titlePart}
+                </span>
+                {subtitlePart && (
+                  <span className="text-[8px] text-zinc-400 mt-1 leading-tight font-normal">
+                    {subtitlePart}
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback for simple, non-Figma configurations
   const services = items.length
     ? items
     : [null, null, null];
   return (
-    <div className="px-3 py-4">
+    <div className="px-3 py-4 bg-white">
       {section.title && (
-        <h3 className="mb-3 text-center text-sm font-bold uppercase">
+        <h3 className="mb-3 text-center text-sm font-bold uppercase text-zinc-800">
           {section.title}
         </h3>
       )}

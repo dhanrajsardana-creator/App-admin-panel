@@ -265,6 +265,7 @@ export interface CategoryShowcaseWidget extends BaseWidget {
     products: WidgetProductItem[]
     action?: WidgetAction
     viewAllAction?: WidgetAction
+    buttonText?: string
   }
 }
 

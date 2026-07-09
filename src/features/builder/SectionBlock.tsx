@@ -48,13 +48,16 @@ export function SectionBlock({
     );
   }
 
+  const isDark = section.configJson?.theme === "dark" || !!section.configJson?.isDark;
+
   return (
     <div
       id={`section-${section.id}`}
       onClick={selectable ? onSelect : undefined}
       className={cn(
-        "relative",
+        "relative transition-colors duration-200",
         selectable && "cursor-pointer",
+        isDark ? "bg-[#121212] text-white" : "bg-white text-zinc-900",
         selected &&
           "outline outline-2 -outline-offset-2 outline-primary"
       )}

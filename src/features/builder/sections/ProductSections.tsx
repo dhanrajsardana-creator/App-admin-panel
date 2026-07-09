@@ -2,7 +2,7 @@ import React from "react";
 import { bool, num, str } from "@/utils/json";
 import { ProductCard, SectionHeading, itemImage } from "./primitives";
 import type { SectionRendererProps } from "./types";
-import { useShopifyCollectionDetail } from "@/hooks/useShopify";
+import { useShopifyCollectionDetail, useShopifyProducts } from "@/hooks/useShopify";
 
 /** Maps raw CMS item titles to clean display labels shown in the tab pills. */
 function normaliseTabLabel(raw: string): string {
@@ -27,7 +27,10 @@ export function ProductShelfSection({ section, items }: SectionRendererProps) {
     section.sectionKey?.toLowerCase().includes("new_arrivals") ||
     section.sectionKey?.toLowerCase().includes("newarrivals");
 
-  const showTabs = isNewArrivals && items.length > 0;
+  const productItems = items.filter((it) => it.referenceType === "PRODUCT");
+  const hasProductItems = productItems.length > 0;
+
+  const showTabs = isNewArrivals && items.length > 0 && !hasProductItems;
 
   const [activeTabState, setActiveTabState] = React.useState(0);
   const activeTabIndex = showTabs ? activeTabState : 0;
@@ -35,12 +38,30 @@ export function ProductShelfSection({ section, items }: SectionRendererProps) {
   const activeItem = items[activeTabIndex] || null;
   const activeCollectionId = activeItem?.referenceType === "COLLECTION" ? activeItem.referenceId : null;
 
-  // Query only the active collection — no fallback to general catalog
+  // Query collection details or all products depending on item configurations
   const { data: collectionData, isLoading: collectionLoading } = useShopifyCollectionDetail(activeCollectionId);
+  const { data: allProducts, isLoading: allProductsLoading } = useShopifyProducts();
 
-  const productsToRender = collectionData?.products || [];
+  let productsToRender: any[] = [];
+  let isLoading = false;
+
+  if (hasProductItems) {
+    isLoading = allProductsLoading;
+    if (allProducts) {
+      productsToRender = productItems
+        .map((item) => allProducts.find((p) => String(p.id) === String(item.referenceId)))
+        .filter(Boolean) as any[];
+    }
+  } else {
+    isLoading = collectionLoading;
+    productsToRender = collectionData?.products || [];
+    // If no items at all, fallback to all catalog products
+    if (items.length === 0 && allProducts) {
+      productsToRender = allProducts;
+    }
+  }
+
   const hasProducts = productsToRender.length > 0;
-  const isLoading = collectionLoading;
 
   const badgeText = (section.title || activeItem?.title || "NEW ARRIVALS").toUpperCase();
 
@@ -96,6 +117,7 @@ export function ProductShelfSection({ section, items }: SectionRendererProps) {
                 title={p.title}
                 price={p.price}
                 config={config}
+                dark={config.theme === "dark" || !!config.isDark}
               />
             </div>
           ))
@@ -106,6 +128,7 @@ export function ProductShelfSection({ section, items }: SectionRendererProps) {
                 badge="NEW"
                 title="New Arrivals"
                 config={config}
+                dark={config.theme === "dark" || !!config.isDark}
               />
             </div>
           ))
@@ -276,8 +299,8 @@ export function CategoryShowcaseSection({ section, items }: SectionRendererProps
   const productsToRender = collectionData?.products || [];
 
   // Resolve category name and product count
-  const rawTitle = firstItem?.title || section.title || "T-Shirts";
-  const categoryName = rawTitle.split("/")[0] || "T-Shirts";
+  const rawTitle = firstItem?.title || section.title || "Bottoms";
+  const categoryName = rawTitle.split("/")[0] || "Bottoms";
   const productCountText = firstItem?.subtitle || `${collectionData?.productsCount || 1280} Products`;
 
   // Map fallback banner image based on title
@@ -363,7 +386,7 @@ export function CategoryShowcaseSection({ section, items }: SectionRendererProps
       {/* VIEW ALL button */}
       <div className="border-y border-white/10 py-3.5 bg-[#121212]">
         <button className="flex w-full items-center justify-center gap-1.5 text-[10px] font-bold tracking-[0.15em] text-white uppercase">
-          VIEW ALL {categoryName.toUpperCase()} →
+          {str(config, "buttonText") || `VIEW ALL ${categoryName}`} →
         </button>
       </div>
     </div>

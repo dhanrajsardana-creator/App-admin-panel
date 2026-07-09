@@ -65,12 +65,18 @@ export function SectionHeading({
   align?: "left" | "center";
   titleColor?: string;
 }) {
-  if (!title && !subtitle && !showViewAll) return null;
+  const titleLower = title?.toLowerCase() || "";
+  const isMoodGrid = titleLower.includes("feeling smooth") || titleLower.includes("wild");
+  
+  const resolvedAlign = isMoodGrid ? "center" : align;
+  const resolvedShowViewAll = isMoodGrid ? false : showViewAll;
+
+  if (!title && !subtitle && !resolvedShowViewAll) return null;
   return (
     <div
       className={cn(
         "mb-2 flex items-end px-3",
-        align === "center" ? "justify-center text-center" : "justify-between"
+        resolvedAlign === "center" ? "justify-center text-center" : "justify-between"
       )}
     >
       <div>
@@ -86,7 +92,7 @@ export function SectionHeading({
           <p className="text-xs text-zinc-500">{subtitle}</p>
         )}
       </div>
-      {showViewAll && align === "left" && (
+      {resolvedShowViewAll && resolvedAlign === "left" && (
         <button className="shrink-0 text-xs font-medium text-zinc-500">
           {viewAllText || "View all"}
         </button>

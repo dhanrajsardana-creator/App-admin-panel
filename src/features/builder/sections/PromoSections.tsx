@@ -62,7 +62,15 @@ export function PromoHeroSection({ section, items }: SectionRendererProps) {
     str(config, "backgroundImage") ||
     (first ? itemImage(first) : null) ||
     DEFAULTS.background;
-  const cards = resolveCards(items, config);
+  const card1: PromoCard = {
+    label: str(config, "card1Text") || (items[0]?.title) || "SHOP TOPWEAR",
+    image: str(config, "card1Image") || (items[0] ? itemImage(items[0]) : null) || "/promo/card-topwear.png",
+  };
+  const card2: PromoCard = {
+    label: str(config, "card2Text") || (items[1]?.title) || "SHOP BOTTOMWEAR",
+    image: str(config, "card2Image") || (items[1] ? itemImage(items[1]) : null) || "/promo/card-bottomwear.png",
+  };
+  const cards = [card1, card2];
 
   return (
     <div className="relative w-full overflow-hidden bg-[#222423]">
@@ -152,6 +160,7 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
   const buttonText = str(config, "buttonText") || "SHOP THE LOOK";
   const defaultPrice = str(config, "priceLabel") || "GET IT FOR ₹599";
 
+  const productItems = items.filter((it) => it.referenceType === "PRODUCT");
   const collectionItem = items.find((it) => it.referenceType === "COLLECTION");
   const activeCollectionId = collectionItem?.referenceId || null;
 
@@ -162,7 +171,15 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
   const limit = collectionItem ? num(collectionItem.metadataJson, "productLimit", 5) : 5;
 
   let cards: { image: string | null; price: string | null }[] = [];
-  if (shopifyProducts.length > 0) {
+  if (productItems.length > 0) {
+    cards = productItems.map((item) => {
+      const prod = allProducts?.find((p) => String(p.id) === String(item.referenceId));
+      return {
+        image: prod?.imageUrl || itemImage(item),
+        price: prod?.price || item.subtitle || defaultPrice,
+      };
+    });
+  } else if (shopifyProducts.length > 0) {
     cards = shopifyProducts.slice(0, limit).map((p) => ({
       image: p.imageUrl,
       price: p.price || defaultPrice,
@@ -224,30 +241,30 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
         zIndex: 20,
         position: "absolute" as const,
         left: "50%",
-        marginLeft: "-105px",
+        marginLeft: "-125px",
       };
     }
 
     if (absOff <= 2) {
       // Tilt counter-clockwise if on the left, clockwise if on the right (2D Z-rotation)
-      // Shifted downwards by 48px, outwards by 245px, scaled down to 0.7, and fully opaque
+      // Shifted downwards by 48px, outwards by 265px, scaled down to 0.7, and fully opaque
       return {
-        transform: `translateY(${absOff * 48}px) translateX(${offset * 245}px) scale(${1 - 0.3 * absOff}) rotate(${offset * 17}deg)`,
+        transform: `translateY(${absOff * 48}px) translateX(${offset * 265}px) scale(${1 - 0.3 * absOff}) rotate(${offset * 17}deg)`,
         opacity: 1,
         zIndex: 20 - absOff,
         position: "absolute" as const,
         left: "50%",
-        marginLeft: "-105px",
+        marginLeft: "-125px",
       };
     }
-    return { opacity: 0, position: "absolute" as const, zIndex: 0, left: "50%", marginLeft: "-105px" };
+    return { opacity: 0, position: "absolute" as const, zIndex: 0, left: "50%", marginLeft: "-125px" };
   };
 
   return (
     <div className="relative overflow-hidden bg-[#f5f4f2] py-8">
       {/* Faded watermark text */}
       <span
-        className="pointer-events-none absolute inset-x-0 top-4 text-center text-[64px] uppercase leading-none text-black/[0.06]"
+        className="pointer-events-none absolute inset-x-0 top-3 text-center text-[84px] font-black uppercase leading-none text-black/[0.05]"
         style={{ fontFamily: DISPLAY_FONT }}
       >
         {watermark}
@@ -255,8 +272,8 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
 
       {/* Carousel container */}
       <div
-        className="new-drop-carousel pt-10 select-none cursor-grab active:cursor-grabbing"
-        style={{ minHeight: 360 }}
+        className="new-drop-carousel pt-2 select-none cursor-grab active:cursor-grabbing"
+        style={{ minHeight: 430 }}
         onTouchStart={(e) => startDrag(e.touches[0].clientX)}
         onTouchEnd={(e) => endDrag(e.changedTouches[0].clientX)}
         onMouseDown={(e) => startDrag(e.clientX)}
@@ -266,30 +283,26 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
         {cards.map((c, i) => (
           <div
             key={i}
-            className="new-drop-slide w-[210px] cursor-pointer"
+            className="new-drop-slide w-[250px] cursor-pointer"
             style={getSlideStyle(i)}
             onClick={() => setActive(i)}
           >
-            {/* Card image with shine effect */}
-            <div className="new-drop-card-image aspect-[3/4] w-full overflow-hidden rounded-sm bg-zinc-200">
-              <PreviewImage src={c.image} className="h-full w-full" />
-            </div>
-            {/* Price + CTA pill */}
-            <div className="relative z-10 mx-2 -mt-5 flex items-stretch rounded-sm bg-white shadow-md">
-              <span
-                className="flex-1 px-2 py-2 text-center text-[12px] uppercase tracking-wide text-zinc-700"
-                style={{ fontFamily: DISPLAY_FONT }}
-              >
-                {c.price}
-              </span>
-              <span className="my-1.5 w-px bg-zinc-200" />
-              <span
-                className="flex items-center gap-1 px-3 py-2 text-[12px] uppercase tracking-wide text-zinc-900"
-                style={{ fontFamily: DISPLAY_FONT }}
-              >
-                {buttonText}
-                <ArrowRight className="h-3 w-3" />
-              </span>
+            {/* Card image and details inside a unified white frame */}
+            <div className="flex flex-col bg-white p-2.5 rounded shadow-sm border border-zinc-100">
+              <div className="new-drop-card-image aspect-[3/4] w-full overflow-hidden rounded bg-zinc-200">
+                <PreviewImage src={c.image} className="h-full w-full object-cover" />
+              </div>
+              {/* Price + CTA row */}
+              <div className="mt-2.5 flex items-center pt-2 text-[10px] font-semibold tracking-wide uppercase text-zinc-800">
+                <span className="flex-1 text-center" style={{ fontFamily: DISPLAY_FONT }}>
+                  {c.price}
+                </span>
+                <span className="h-4 w-px bg-zinc-200 shrink-0" />
+                <span className="flex-1 flex items-center justify-center gap-1" style={{ fontFamily: DISPLAY_FONT }}>
+                  {buttonText}
+                  <ArrowRight className="h-3 w-3 shrink-0" />
+                </span>
+              </div>
             </div>
           </div>
         ))}
@@ -399,7 +412,7 @@ export function ExclusiveOffersSection({ section, items }: SectionRendererProps)
 export function MoodGridSection({ section, items }: SectionRendererProps) {
   const config = section.configJson ?? {};
   const columns = Math.min(Math.max(num(config, "columns", 3), 2), 4);
-  const heading = section.title || "ARE WE FEELING SMOOTH OR WILD?";
+  const heading = str(config, "title") || section.title || "ARE WE FEELING SMOOTH OR WILD?";
   const tiles =
     items.length > 0 ? items : Array.from({ length: columns * 3 }, () => null);
 
@@ -508,6 +521,7 @@ export function ShopTheLookSection({ section, items }: SectionRendererProps) {
                 image={itemImage(it)}
                 title={it?.title}
                 config={config}
+                dark={config.theme === "dark" || !!config.isDark}
               />
             </div>
           ))}

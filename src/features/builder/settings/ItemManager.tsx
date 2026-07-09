@@ -27,6 +27,8 @@ import {
 import { itemImage } from "@/features/builder/sections/primitives";
 import { ItemFormDialog } from "./ItemFormDialog";
 import type { Section, SectionItem } from "@/types";
+import { num } from "@/utils/json";
+import { useShopifyCollectionDetail, useShopifyProducts } from "@/hooks/useShopify";
 
 function SortableItemRow({
   item,
@@ -39,7 +41,28 @@ function SortableItemRow({
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id });
-  const img = itemImage(item);
+
+  const { data: allProducts } = useShopifyProducts();
+  const { data: collectionDetail } = useShopifyCollectionDetail(
+    item.referenceType === "COLLECTION" ? item.referenceId : null
+  );
+
+  let displayTitle = item.title;
+  let displayImg = itemImage(item);
+
+  if (item.referenceType === "PRODUCT" && allProducts) {
+    const matched = allProducts.find((p) => String(p.id) === String(item.referenceId));
+    if (matched) {
+      displayTitle = displayTitle || matched.title;
+      displayImg = displayImg || matched.imageUrl;
+    }
+  } else if (item.referenceType === "COLLECTION" && collectionDetail) {
+    displayTitle = displayTitle || collectionDetail.title;
+    displayImg = displayImg || collectionDetail.imageUrl;
+  }
+
+  const showTitleText = displayTitle || item.itemType || "Untitled item";
+
   return (
     <div
       ref={setNodeRef}
@@ -58,15 +81,15 @@ function SortableItemRow({
         <GripVertical className="h-4 w-4" />
       </button>
       <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded bg-muted">
-        {img ? (
-          <img src={img} alt="" className="h-full w-full object-cover" />
+        {displayImg ? (
+          <img src={displayImg} alt="" className="h-full w-full object-cover" />
         ) : (
           <ImageIcon className="h-4 w-4 text-muted-foreground" />
         )}
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">
-          {item.title || item.itemType || "Untitled item"}
+          {showTitleText}
         </p>
         <p className="truncate text-[11px] text-muted-foreground">
           {item.referenceType
@@ -98,6 +121,39 @@ export function ItemManager({ section }: { section: Section }) {
   const [order, setOrder] = useState<SectionItem[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editItem, setEditItem] = useState<SectionItem | null>(null);
+
+  const isNewDrop = section.sectionType === "new_drop_products";
+  const isProductShelf = section.sectionType === "product_shelf";
+  const productItems = items?.filter((it) => it.referenceType === "PRODUCT") || [];
+  const collectionItem = items?.find((it) => it.referenceType === "COLLECTION");
+  const activeCollectionId = collectionItem?.referenceId || null;
+
+  const { data: collectionData } = useShopifyCollectionDetail(activeCollectionId);
+  const { data: allProducts } = useShopifyProducts();
+
+  const shopifyProducts = collectionData?.products || [];
+  const limit = isNewDrop
+    ? (collectionItem ? num(collectionItem.metadataJson, "productLimit", 5) : 5)
+    : num(section.configJson, "maxItems", 6);
+
+  let resolvedProducts: any[] = [];
+  if (isNewDrop || isProductShelf) {
+    if (productItems.length > 0) {
+      if (allProducts) {
+        resolvedProducts = productItems
+          .map((item) => allProducts.find((p) => String(p.id) === String(item.referenceId)))
+          .filter(Boolean)
+          .slice(0, limit);
+      }
+    } else if (shopifyProducts.length > 0) {
+      resolvedProducts = shopifyProducts.slice(0, limit);
+    } else if (allProducts && allProducts.length > 0) {
+      const hasNormalItems = items?.some((it) => it.referenceType !== "COLLECTION");
+      if (!hasNormalItems || collectionItem) {
+        resolvedProducts = allProducts.slice(0, limit);
+      }
+    }
+  }
   const [pendingDelete, setPendingDelete] = useState<SectionItem | null>(null);
 
   useEffect(() => {
@@ -175,10 +231,40 @@ export function ItemManager({ section }: { section: Section }) {
         </DndContext>
       )}
 
+      {(isNewDrop || isProductShelf) && resolvedProducts.length > 0 && (
+        <div className="mt-4 space-y-2 border-t pt-4">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Products showing on UI ({resolvedProducts.length})
+          </span>
+          <div className="space-y-1.5">
+            {resolvedProducts.map((prod) => (
+              <div key={prod.id} className="flex items-center gap-2 rounded-md border bg-muted/40 p-2">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded bg-muted">
+                  {prod.imageUrl ? (
+                    <img src={prod.imageUrl} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    {prod.title}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {prod.price || "—"}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <ItemFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
         sectionId={section.id}
+        sectionType={section.sectionType}
         item={editItem}
         defaultSortOrder={order.length}
       />

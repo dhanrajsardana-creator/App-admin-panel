@@ -42,9 +42,15 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   promo_hero: {
     fields: [
-      { kind: "text", key: "heading", label: "Heading text", group: "content" },
-      { kind: "text", key: "subheadingText", label: "Subheading text", group: "content" },
-      { kind: "file", key: "backgroundMediaValue", label: "Background image", group: "content" },
+      { kind: "text", key: "heading", label: "Heading text", placeholder: "YOUR PERFECT SUMMER VIBE", group: "content" },
+      { kind: "text", key: "subheadingText", label: "Subheading text", placeholder: "DEALS THAT'S HARD TO RESISTS", group: "content" },
+      { kind: "text", key: "backgroundMediaValue", label: "Background image URL", placeholder: "/promo/summer-bg.png", group: "content" },
+      { kind: "text", key: "card1Text", label: "Card 1 Text", placeholder: "SHOP TOPWEAR", group: "content" },
+      { kind: "text", key: "card1Image", label: "Card 1 Image URL", placeholder: "/promo/card-topwear.png", group: "content" },
+      { kind: "text", key: "card1CollectionId", label: "Card 1 Collection ID", placeholder: "e.g. 44961808", group: "content" },
+      { kind: "text", key: "card2Text", label: "Card 2 Text", placeholder: "SHOP BOTTOMWEAR", group: "content" },
+      { kind: "text", key: "card2Image", label: "Card 2 Image URL", placeholder: "/promo/card-bottomwear.png", group: "content" },
+      { kind: "text", key: "card2CollectionId", label: "Card 2 Collection ID", placeholder: "e.g. 44961809", group: "content" },
     ],
   },
 
@@ -63,6 +69,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   mood_grid: {
     fields: [
+      { kind: "text", key: "title", label: "Section title", placeholder: "ARE WE FEELING SMOOTH OR WILD?", group: "content" },
       { kind: "number", key: "columns", label: "Columns", min: 2, max: 4, group: "style" },
     ],
   },
@@ -83,22 +90,9 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   hero_carousel: {
     fields: [
-      { kind: "switch", key: "showSearch", label: "Show search bar", group: "content" },
-      { kind: "file", key: "backgroundMediaValue", label: "Background image", group: "content" },
-      { kind: "text", key: "searchPlaceholder", label: "Search placeholder", group: "content" },
-      { kind: "text", key: "overlayTitle", label: "Overlay title", placeholder: "BEYOND", group: "content" },
-      { kind: "text", key: "overlaySubtitle", label: "Overlay subtitle", placeholder: "ORDINARY", group: "content" },
-      { kind: "switch", key: "showBrandName", label: "Show brand name", group: "content" },
-      { kind: "text", key: "brandName", label: "Brand name", placeholder: "POWERLOOK", group: "content" },
-      { kind: "switch", key: "autoPlay", label: "Autoplay", group: "content" },
-      { kind: "number", key: "interval", label: "Interval (ms)", min: 1000, step: 500, group: "content" },
-      { kind: "switch", key: "loop", label: "Loop", group: "content" },
-      { kind: "text", key: "aspectRatio", label: "Aspect ratio", placeholder: "3/4", group: "style" },
-      { kind: "switch", key: "showDots", label: "Show dots", group: "style" },
-      { kind: "switch", key: "showArrows", label: "Show arrows", group: "style" },
-      { kind: "number", key: "overlayOpacity", label: "Overlay opacity", min: 0, max: 1, step: 0.05, group: "style" },
-      { kind: "color", key: "textColor", label: "Overlay text color", group: "style" },
-      { kind: "color", key: "dotActiveColor", label: "Active dot color", group: "style" },
+      { kind: "text", key: "backgroundMediaValue", label: "Background image URL", group: "content" },
+      { kind: "text", key: "overlayTitle", label: "Overlay title (BEYOND)", placeholder: "BEYOND", group: "content" },
+      { kind: "text", key: "overlaySubtitle", label: "Overlay subtitle (ORDINARY)", placeholder: "ORDINARY", group: "content" },
     ],
   },
 
@@ -141,12 +135,6 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
       { kind: "switch", key: "showViewAll", label: "Show 'View all'", group: "content" },
       { kind: "text", key: "viewAllText", label: "'View all' text", group: "content" },
       { kind: "switch", key: "showSectionTitle", label: "Show section title", group: "content" },
-      { kind: "number", key: "columns", label: "Columns", min: 1, max: 4, group: "style" },
-      { kind: "switch", key: "showPrice", label: "Show price", group: "style" },
-      { kind: "switch", key: "showWishlist", label: "Show wishlist", group: "style" },
-      { kind: "switch", key: "showAddToCart", label: "Show add to cart", group: "style" },
-      { kind: "switch", key: "showDiscountBadge", label: "Show discount badge", group: "style" },
-      { kind: "switch", key: "showMemberPrice", label: "Show member price", group: "style" },
       { kind: "text", key: "memberLabel", label: "Member price label", group: "content" },
       { kind: "number", key: "cardBorderRadius", label: "Card radius", min: 0, max: 32, group: "style" },
     ],
@@ -170,26 +158,11 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   category_grid: {
     fields: [
+      { kind: "text", key: "title", label: "Section title", placeholder: "WE FEELING SMOOTH OR WILD", group: "content" },
       { kind: "switch", key: "showSectionTitle", label: "Show section title", group: "content" },
-      { kind: "switch", key: "showViewAll", label: "Show 'View all'", group: "content" },
-      { kind: "text", key: "viewAllText", label: "'View all' text", group: "content" },
       { kind: "switch", key: "showLabel", label: "Show labels", group: "content" },
       { kind: "number", key: "columns", label: "Columns", min: 2, max: 5, group: "style" },
       { kind: "number", key: "gap", label: "Gap (px)", min: 0, max: 24, group: "style" },
-      {
-        kind: "select", key: "imageShape", label: "Image shape", group: "style",
-        options: [
-          { value: "circle", label: "Circle" },
-          { value: "square", label: "Square" },
-        ],
-      },
-      {
-        kind: "select", key: "textAlign", label: "Title align", group: "style",
-        options: [
-          { value: "left", label: "Left" },
-          { value: "center", label: "Center" },
-        ],
-      },
     ],
   },
 

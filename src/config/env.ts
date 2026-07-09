@@ -16,6 +16,10 @@ function int(v: string | undefined, fallback: number): number {
 }
 
 export const ENV = {
+  /** Production / Staging base URL */
+  prod_url: e.VITE_PROD_URL ?? "https://stage-api.powerlook.in/api/v1/",
+  /** Testing base URL */
+  test_url: e.VITE_TEST_URL ?? "https://dentilabial-noel-improbably.ngrok-free.dev/api/v1/",
   /** CMS API base, e.g. https://host/api/v1 */
   apiBaseUrl: e.VITE_API_BASE_URL ?? "https://stage-api.powerlook.in/api/v1/",
   /** Axios request timeout (ms). */

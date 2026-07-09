@@ -180,10 +180,13 @@ export const bffAdapter = {
     }))
 
     const firstItem = items[0]
+    const overlayTitle = firstItem?.title || (section.configJson?.overlayTitle as string) || section.title || 'BEYOND'
+    const overlaySubtitle = firstItem?.subtitle || (section.configJson?.overlaySubtitle as string) || section.subtitle || 'ORDINARY'
+
     const overlay = firstItem
       ? {
-          subtitle: firstItem.subtitle || 'POWERLOOK PRESENTS',
-          title: (firstItem.title || 'BEYOND\nORDINARY').replace(/\.\s+/g, '.\n'),
+          subtitle: overlaySubtitle,
+          title: overlayTitle.replace(/\.\s+/g, '.\n'),
           ctaText: (firstItem.metadataJson?.buttonText as string) || 'SHOP NOW',
           action: mapBffAction(firstItem.redirectType, firstItem.redirectValue),
         }
@@ -523,9 +526,10 @@ export const bffAdapter = {
     const items = section.items ?? []
     const item = items[0]
     const resolvedCollection = (item as any)?.resolved as any
+    const config = section.configJson ?? {}
 
     const rawTitle = item?.title || resolvedCollection?.title || ''
-    const categoryName = rawTitle.split('/')[0] || 'T-Shirts'
+    const categoryName = rawTitle.split('/')[0] || 'Bottoms'
     const productCountText = `${resolvedCollection?.productCount || 0} Products`
 
     const bannerImageUrl =
@@ -555,6 +559,7 @@ export const bffAdapter = {
         products: mappedProducts,
         action,
         viewAllAction: action,
+        buttonText: config.buttonText as string | undefined,
       },
       styles: { backgroundColor: section.backgroundColor ?? undefined },
     } as CategoryShowcaseWidget
