@@ -5,8 +5,9 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { pagesApi } from "@/api/pages";
+import { itemsApi } from "@/api/items";
 import { qk } from "./queryKeys";
-import type { CreatePagePayload, Page, UpdatePagePayload } from "@/types";
+import type { CreatePagePayload, Page, UpdatePagePayload, SectionItem } from "@/types";
 
 export function usePages() {
   return useQuery({
@@ -66,10 +67,43 @@ export function useDeletePage() {
 export function usePublishPage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => pagesApi.publish(id),
+    mutationFn: async (page: Page) => {
+      const heroSections = page.sections?.filter(s => s.sectionType === "hero_carousel") || [];
+      const updatePromises: Promise<SectionItem>[] = [];
+      
+      for (const section of heroSections) {
+        const overlayTitle = (section.configJson?.overlayTitle as string) || "BEYOND";
+        const overlaySubtitle = (section.configJson?.overlaySubtitle as string) || "ORDINARY";
+        
+        for (const item of section.items || []) {
+          const meta = item.metadataJson || {};
+          const currentTexts = meta.overlayingTexts as string[];
+          
+          if (!currentTexts || currentTexts[0] !== overlayTitle || currentTexts[1] !== overlaySubtitle) {
+            updatePromises.push(
+              itemsApi.update(item.id, {
+                title: overlayTitle,
+                subtitle: overlaySubtitle,
+                metadataJson: {
+                  ...meta,
+                  overlayingTexts: [overlayTitle, overlaySubtitle]
+                }
+              })
+            );
+          }
+        }
+      }
+      
+      if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+      }
+      
+      return pagesApi.publish(page.id);
+    },
     onSuccess: (page) => {
       qc.invalidateQueries({ queryKey: qk.pages });
       qc.invalidateQueries({ queryKey: qk.page(page.id) });
+      qc.invalidateQueries({ queryKey: ["items"] });
       toast.success("Published successfully");
     },
     onError: (e: { message?: string }) =>

@@ -224,6 +224,13 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   services_information: { fields: [] },
 };
 
-export function getSectionSchema(sectionType: string): SectionSchema {
+export function getSectionSchema(sectionType: string, sectionKey?: string): SectionSchema {
+  if (sectionKey === "DEALS_SHOWCASE") {
+    return {
+      fields: [
+        { kind: "text", key: "subtitle", label: "Subtitle text", group: "content", isRoot: true },
+      ],
+    };
+  }
   return SECTION_SCHEMAS[sectionType?.toLowerCase()] ?? { fields: [] };
 }

@@ -110,7 +110,7 @@ export function TopBar() {
         <Button
           size="sm"
           disabled={!page || publish.isPending}
-          onClick={() => page && publish.mutate(page.id)}
+          onClick={() => page && publish.mutate(page)}
         >
           {publish.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
