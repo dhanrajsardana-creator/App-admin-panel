@@ -1,6 +1,6 @@
 export type FieldGroup = "content" | "style";
 
-export type FieldDef =
+export type FieldDef = (
   | { kind: "text"; key: string; label: string; placeholder?: string; group: FieldGroup }
   | { kind: "textarea"; key: string; label: string; placeholder?: string; group: FieldGroup }
   | { kind: "number"; key: string; label: string; min?: number; max?: number; step?: number; group: FieldGroup }
@@ -13,7 +13,8 @@ export type FieldDef =
       label: string;
       options: { value: string; label: string }[];
       group: FieldGroup;
-    };
+    }
+) & { isRoot?: boolean };
 
 export interface SectionSchema {
   fields: FieldDef[];

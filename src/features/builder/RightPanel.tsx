@@ -83,7 +83,7 @@ export function RightPanel() {
     );
   }
 
-  const schema = getSectionSchema(section.sectionType);
+  const schema = getSectionSchema(section.sectionType, section.sectionKey);
   const config = section.configJson ?? {};
   const contentFields = schema.fields.filter((f) => f.group === "content");
   const styleFields = schema.fields.filter((f) => f.group === "style");
@@ -132,8 +132,8 @@ export function RightPanel() {
                   <FieldControl
                     key={f.key}
                     field={f}
-                    config={config}
-                    onChange={patchConfig}
+                    config={f.isRoot ? (section as unknown as JsonMap) : config}
+                    onChange={f.isRoot ? (key, val) => patchField({ [key]: val }) : patchConfig}
                   />
                 ))}
               </div>
@@ -179,8 +179,8 @@ export function RightPanel() {
                   <FieldControl
                     key={f.key}
                     field={f}
-                    config={config}
-                    onChange={patchConfig}
+                    config={f.isRoot ? (section as unknown as JsonMap) : config}
+                    onChange={f.isRoot ? (key, val) => patchField({ [key]: val }) : patchConfig}
                   />
                 ))}
               </div>

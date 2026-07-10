@@ -26,6 +26,8 @@ const buttonStyle: FieldDef = {
 
 // Shared overlay/CTA fields used by the banner family.
 const bannerFields: FieldDef[] = [
+  { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+  { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
   { kind: "text", key: "backgroundMediaValue", label: "Background image / media URL", group: "content" },
   { kind: "text", key: "buttonText", label: "Button text", group: "content" },
   textPosition,
@@ -38,7 +40,15 @@ const bannerFields: FieldDef[] = [
 
 export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   banner: { fields: bannerFields },
-  featured_collection_products: { fields: bannerFields },
+  featured_collection_products: { 
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
+      { kind: "number", key: "columns", label: "Columns", min: 1, max: 4, group: "style" },
+      { kind: "number", key: "maxItems", label: "Max products", min: 1, max: 30, group: "content" },
+      { kind: "text", key: "buttonText", label: "View all button text", group: "content" },
+    ]
+  },
 
   promo_hero: {
     fields: [
@@ -136,14 +146,14 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
       { kind: "text", key: "viewAllText", label: "'View all' text", group: "content" },
       { kind: "switch", key: "showSectionTitle", label: "Show section title", group: "content" },
       { kind: "text", key: "memberLabel", label: "Member price label", group: "content" },
-      { kind: "number", key: "cardBorderRadius", label: "Card radius", min: 0, max: 32, group: "style" },
     ],
   },
   collection_with_products: {
     fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
       { kind: "number", key: "maxItems", label: "Max products", min: 1, max: 30, group: "content" },
-      { kind: "switch", key: "showViewAll", label: "Show 'View all'", group: "content" },
-      { kind: "switch", key: "showPrice", label: "Show price", group: "style" },
+      { kind: "text", key: "backgroundMediaValue", label: "Background media URL", group: "content" },
+      { kind: "text", key: "buttonText", label: "Button text", group: "content" },
     ],
   },
 
@@ -162,7 +172,6 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
       { kind: "switch", key: "showSectionTitle", label: "Show section title", group: "content" },
       { kind: "switch", key: "showLabel", label: "Show labels", group: "content" },
       { kind: "number", key: "columns", label: "Columns", min: 2, max: 5, group: "style" },
-      { kind: "number", key: "gap", label: "Gap (px)", min: 0, max: 24, group: "style" },
     ],
   },
 
@@ -224,6 +233,34 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   services_information: { fields: [] },
 };
 
-export function getSectionSchema(sectionType: string): SectionSchema {
+export function getSectionSchema(sectionType: string, sectionKey?: string): SectionSchema {
+  if (sectionKey === "DEALS_SHOWCASE") {
+    return {
+      fields: [
+        { kind: "text", key: "subtitle", label: "Subtitle text", group: "content", isRoot: true },
+        { kind: "number", key: "maxItems", label: "Max products", min: 1, max: 30, group: "content" },
+        { kind: "text", key: "buttonText", label: "Button text", group: "content" },
+      ],
+    };
+  }
+  if (sectionKey === "STYLE_SPOTLIGHT") {
+    return {
+      fields: [
+        { kind: "text", key: "backgroundMediaValue", label: "Background image / media URL", group: "content" },
+        { kind: "text", key: "buttonText", label: "Button text", group: "content" },
+      ],
+    };
+  }
+  
+  if (sectionKey === "TRENDING_SHOWCASE") {
+    return {
+      fields: [
+        { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+        { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
+        { kind: "text", key: "backgroundMediaValue", label: "Background image / media URL", group: "content" },
+        { kind: "text", key: "buttonText", label: "Button text", group: "content" },
+      ],
+    };
+  }
   return SECTION_SCHEMAS[sectionType?.toLowerCase()] ?? { fields: [] };
 }
