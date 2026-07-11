@@ -375,8 +375,7 @@ export function HeroCarouselSection({ section, items }: SectionRendererProps) {
           return (
             <div
               key={item?.id ?? i}
-              className="relative shrink-0 snap-center overflow-hidden bg-zinc-800"
-              style={{ width: "375px", height: "812px" }}
+              className="relative shrink-0 snap-center overflow-hidden bg-zinc-800 w-full h-[740px]"
             >
               {/* Image with zoom-out animation */}
               <div className="hero-intro-image h-full w-full">

@@ -106,19 +106,7 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {/* App header */}
-        {!isHomePage && (
-          <div className="flex shrink-0 items-center justify-between border-b bg-white px-4 py-2.5">
-            <span className="text-sm font-black tracking-widest">
-              {ENV.storeBrandName}
-            </span>
-            <div className="flex items-center gap-3 text-zinc-700">
-              <Search className="h-4 w-4" />
-              <Heart className="h-4 w-4" />
-              <ShoppingBag className="h-4 w-4" />
-            </div>
-          </div>
-        )}
+
 
         {/* Scrollable content */}
         <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto bg-zinc-50">
