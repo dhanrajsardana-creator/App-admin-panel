@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { UpdateSectionPayload } from "@/types";
 
 export type PreviewSource = "draft" | "mobile";
 
@@ -36,9 +37,12 @@ interface BuilderState {
   pageSearch: string;
   /** "draft" renders local builder state; "mobile" renders the live mobile API. */
   previewSource: PreviewSource;
-  /** Tracks in-flight auto-saves so the top bar can show a "Saving…" indicator. */
-  savingCount: number;
-  lastSavedAt: number | null;
+
+  /**
+   * Pending section edits that have NOT yet been pushed to the API.
+   * Keyed by section id; value is the accumulated patch to send on Publish.
+   */
+  pendingEdits: Record<string, UpdateSectionPayload>;
 
   // --- Actions ----------------------------------------------------------
   selectPage: (pageId: string | null) => void;
@@ -56,11 +60,30 @@ interface BuilderState {
   setAppScreen: (screen: AppScreen) => void;
   setPageSearch: (q: string) => void;
   setPreviewSource: (s: PreviewSource) => void;
+
+  /**
+   * Merge `patch` into the pending edits for `sectionId`.
+   * Does NOT call the API — changes are held locally until Publish.
+   */
+  queueSectionEdit: (sectionId: string, patch: UpdateSectionPayload) => void;
+
+  /** Returns true if there are any unsaved pending edits. */
+  hasPendingEdits: () => boolean;
+
+  /**
+   * Consume and clear all pending edits, returning them as an array of
+   * { id, payload } pairs so the caller can flush them to the API.
+   */
+  flushPendingEdits: () => Array<{ id: string; payload: UpdateSectionPayload }>;
+
+  // Kept for backwards-compat with any code that still calls these — now no-ops.
   beginSave: () => void;
   endSave: () => void;
+  lastSavedAt: number | null;
+  savingCount: number;
 }
 
-export const useBuilderStore = create<BuilderState>((set) => ({
+export const useBuilderStore = create<BuilderState>((set, get) => ({
   selectedPageId: null,
   selectedSectionId: null,
   selectedItemId: null,
@@ -70,6 +93,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   appScreen: null,
   pageSearch: "",
   previewSource: "draft",
+  pendingEdits: {},
+  // backwards-compat stubs
   savingCount: 0,
   lastSavedAt: null,
 
@@ -83,6 +108,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       catalogPreview: null,
       catalogHistory: [],
       appScreen: null,
+      // Discard unsaved edits when switching pages.
+      pendingEdits: {},
     }),
 
   selectSection: (sectionId) =>
@@ -93,8 +120,6 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   selectCatalog: (catalog, opts) =>
     set((st) => ({
       catalogPreview: catalog,
-      // push: append the current screen to the back-stack; otherwise reset it
-      // (a fresh navigation from the sidebar starts a new history).
       catalogHistory: opts?.push
         ? st.catalogPreview
           ? [...st.catalogHistory, st.catalogPreview]
@@ -118,7 +143,6 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   setAppScreen: (screen) =>
     set({
       appScreen: screen,
-      // App screens take over the phone; leave the catalog preview behind.
       catalogPreview: null,
       catalogHistory: [],
       selectedSectionId: null,
@@ -129,11 +153,35 @@ export const useBuilderStore = create<BuilderState>((set) => ({
 
   setPreviewSource: (s) => set({ previewSource: s }),
 
-  beginSave: () => set((st) => ({ savingCount: st.savingCount + 1 })),
-
-  endSave: () =>
+  queueSectionEdit: (sectionId, patch) =>
     set((st) => ({
-      savingCount: Math.max(0, st.savingCount - 1),
-      lastSavedAt: Date.now(),
+      pendingEdits: {
+        ...st.pendingEdits,
+        [sectionId]: {
+          ...(st.pendingEdits[sectionId] ?? {}),
+          ...patch,
+          // Deep-merge configJson so individual key edits accumulate correctly.
+          ...(patch.configJson != null
+            ? {
+                configJson: {
+                  ...(st.pendingEdits[sectionId]?.configJson ?? {}),
+                  ...patch.configJson,
+                },
+              }
+            : {}),
+        },
+      },
     })),
+
+  hasPendingEdits: () => Object.keys(get().pendingEdits).length > 0,
+
+  flushPendingEdits: () => {
+    const edits = get().pendingEdits;
+    set({ pendingEdits: {} });
+    return Object.entries(edits).map(([id, payload]) => ({ id, payload }));
+  },
+
+  // No-op stubs kept for backwards compat
+  beginSave: () => {},
+  endSave: () => {},
 }));

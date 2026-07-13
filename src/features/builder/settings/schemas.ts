@@ -80,7 +80,6 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   mood_grid: {
     fields: [
       { kind: "text", key: "title", label: "Section title", placeholder: "ARE WE FEELING SMOOTH OR WILD?", group: "content" },
-      { kind: "number", key: "columns", label: "Columns", min: 2, max: 4, group: "style" },
     ],
   },
 
@@ -259,6 +258,99 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
         { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
         { kind: "text", key: "backgroundMediaValue", label: "Background image / media URL", group: "content" },
         { kind: "text", key: "buttonText", label: "Button text", group: "content" },
+      ],
+    };
+  }
+  if (sectionKey === "HOME_HERO_CAROUSEL") {
+    return {
+      fields: [
+        // ── Brand logo ──────────────────────────────────────────────────────
+        {
+          kind: "switch",
+          key: "isBrandLogoEnabled",
+          label: "Show brand logo",
+          group: "content",
+        },
+        // ── Search box ──────────────────────────────────────────────────────
+        {
+          kind: "switch",
+          key: "isSearchBoxEnabled",
+          label: "Show search box",
+          group: "content",
+        },
+        {
+          kind: "text",
+          key: "searchBoxFixedPlaceholder",
+          label: "Search box fixed prefix",
+          placeholder: "Search for",
+          group: "content",
+        },
+        {
+          kind: "tags",
+          key: "searchBoxRotationalPlaceholders",
+          label: "Search box rotating placeholders",
+          placeholder: "e.g. T-shirts, Jackets… (Enter to add)",
+          group: "content",
+        },
+        // ── Background ──────────────────────────────────────────────────────
+        {
+          kind: "select",
+          key: "backgroundMediaType",
+          label: "Background media type",
+          group: "content",
+          options: [
+            { value: "IMAGE", label: "Image" },
+            { value: "VIDEO", label: "Video" },
+          ],
+        },
+        {
+          kind: "text",
+          key: "backgroundMediaValue",
+          label: "Background image / video URL",
+          placeholder: "https://…",
+          group: "content",
+        },
+        // ── Overlay text ────────────────────────────────────────────────────
+        {
+          kind: "tags",
+          key: "overlayingTexts",
+          label: "Overlaying texts (e.g. BEYOND, ORDINARY)",
+          placeholder: "e.g. BEYOND (Enter to add)",
+          group: "content",
+        },
+        {
+          kind: "text",
+          key: "overlayingTitle",
+          label: "Overlaying title",
+          placeholder: "Powerlook Presents",
+          group: "content",
+        },
+        // ── View-all CTA ────────────────────────────────────────────────────
+        {
+          kind: "text",
+          key: "viewAllButtonText",
+          label: "View all button text",
+          placeholder: "Shop Now",
+          group: "content",
+        },
+        {
+          kind: "select",
+          key: "viewAllRedirectType",
+          label: "View all redirect type",
+          group: "content",
+          options: [
+            { value: "COLLECTION", label: "Collection" },
+            { value: "LANDING", label: "Landing page" },
+            { value: "NONE", label: "None" },
+          ],
+        },
+        {
+          kind: "text",
+          key: "viewAllValue",
+          label: "View all redirect value",
+          placeholder: "e.g. new-arrivals-view-all",
+          group: "content",
+        },
       ],
     };
   }

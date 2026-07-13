@@ -14,6 +14,7 @@ export type FieldDef = (
       options: { value: string; label: string }[];
       group: FieldGroup;
     }
+  | { kind: "tags"; key: string; label: string; placeholder?: string; group: FieldGroup }
 ) & { isRoot?: boolean };
 
 export interface SectionSchema {

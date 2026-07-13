@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -22,6 +22,63 @@ import { Spinner } from "@/components/common/Spinner";
 import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
 import { useShopifyProducts } from "@/hooks/useShopify";
 import type { JsonMap, SectionItem, UpdateItemPayload } from "@/types";
+
+// ── Inline metadata form ────────────────────────────────────────────────────
+// Renders each key of a flat JSON object as a labeled input.
+// Booleans → Switch, everything else → text Input.
+// Layout: flex-wrap, 3 fields per row.
+function MetadataFields({
+  meta,
+  onChange,
+}: {
+  meta: JsonMap;
+  onChange: (next: JsonMap) => void;
+}) {
+  const keys = Object.keys(meta);
+  if (keys.length === 0) return null;
+
+  const patch = (k: string, v: unknown) => onChange({ ...meta, [k]: v });
+  const label = (k: string) =>
+    k
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (s) => s.toUpperCase())
+      .trim();
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Metadata
+      </Label>
+      <div className="flex flex-wrap gap-x-3 gap-y-3">
+        {keys.map((k) => {
+          const val = meta[k];
+          const isBool = typeof val === "boolean";
+          return (
+            <div
+              key={k}
+              className="flex min-w-0 flex-col gap-1"
+              style={{ flexBasis: "calc(33.333% - 8px)", flexGrow: 0, flexShrink: 0 }}
+            >
+              <Label className="truncate text-[11px]">{label(k)}</Label>
+              {isBool ? (
+                <Switch
+                  checked={val as boolean}
+                  onCheckedChange={(v) => patch(k, v)}
+                />
+              ) : (
+                <Input
+                  value={String(val ?? "")}
+                  onChange={(e) => patch(k, e.target.value)}
+                  className="h-8 text-xs"
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 const REFERENCE_TYPES = [
   "NONE",
@@ -57,11 +114,11 @@ export function ItemFormDialog({
   const { data: allProducts } = useShopifyProducts();
 
   const [form, setForm] = useState<UpdateItemPayload>({});
-  const [metaText, setMetaText] = useState("{}");
-  const [metaError, setMetaError] = useState<string | null>(null);
+  const [metaJson, setMetaJson] = useState<JsonMap>({});
 
   useEffect(() => {
     if (!open) return;
+    const initialMeta = (item?.metadataJson ?? {}) as JsonMap;
     setForm({
       title: item?.title ?? "",
       subtitle: item?.subtitle ?? "",
@@ -74,10 +131,9 @@ export function ItemFormDialog({
       referenceId: item?.referenceId ?? "",
       redirectType: item?.redirectType ?? "",
       redirectValue: item?.redirectValue ?? "",
-      metadataJson: item?.metadataJson ?? {},
+      metadataJson: initialMeta,
     });
-    setMetaText(JSON.stringify(item?.metadataJson ?? {}, null, 2));
-    setMetaError(null);
+    setMetaJson(initialMeta);
   }, [open, item, isNewDrop, isProductShelf]);
 
   useEffect(() => {
@@ -100,13 +156,7 @@ export function ItemFormDialog({
     setForm((f) => ({ ...f, [key]: value }));
 
   const handleSave = () => {
-    let metadataJson: JsonMap = {};
-    try {
-      metadataJson = metaText.trim() ? JSON.parse(metaText) : {};
-    } catch {
-      setMetaError("Invalid JSON");
-      return;
-    }
+    let metadataJson: JsonMap = { ...metaJson };
     if (sectionType === "hero_carousel") {
       const titleVal = (form.title as string) || "BEYOND";
       const subtitleVal = (form.subtitle as string) || "ORDINARY";
@@ -447,20 +497,15 @@ export function ItemFormDialog({
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Metadata JSON</Label>
-              <Textarea
-                value={metaText}
-                onChange={(e) => {
-                  setMetaText(e.target.value);
-                  setMetaError(null);
+            {Object.keys(metaJson).length > 0 && (
+              <MetadataFields
+                meta={metaJson}
+                onChange={(next) => {
+                  setMetaJson(next);
+                  setForm((f) => ({ ...f, metadataJson: next }));
                 }}
-                className="min-h-[120px] font-mono text-xs"
               />
-              {metaError && (
-                <p className="text-xs text-destructive">{metaError}</p>
-              )}
-            </div>
+            )}
           </div>
         )}
 

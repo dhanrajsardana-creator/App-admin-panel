@@ -1,3 +1,5 @@
+import { useState, useRef } from "react";
+import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -128,7 +130,86 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
         </div>
       );
 
+    case "tags": {
+      // Read current value as string[]
+      const raw = config[field.key];
+      const tags: string[] = Array.isArray(raw) ? raw.map(String) : [];
+      return (
+        <TagsField
+          label={field.label}
+          placeholder={field.placeholder}
+          tags={tags}
+          onChange={(next) => onChange(field.key, next)}
+        />
+      );
+    }
+
     default:
       return null;
   }
+}
+
+// ── Inner component so we can use local state cleanly ─────────────────────────
+interface TagsFieldProps {
+  label: string;
+  placeholder?: string;
+  tags: string[];
+  onChange: (tags: string[]) => void;
+}
+
+function TagsField({ label, placeholder, tags, onChange }: TagsFieldProps) {
+  const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const add = () => {
+    const val = input.trim();
+    if (val && !tags.includes(val)) {
+      onChange([...tags, val]);
+    }
+    setInput("");
+  };
+
+  const remove = (i: number) => onChange(tags.filter((_, idx) => idx !== i));
+
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      {/* Pill display */}
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((t, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+            >
+              {t}
+              <button
+                type="button"
+                onClick={() => remove(i)}
+                className="ml-0.5 rounded-full hover:bg-primary/20 p-0.5"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {/* Input */}
+      <Input
+        ref={inputRef}
+        value={input}
+        placeholder={placeholder ?? "Type and press Enter…"}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === ",") {
+            e.preventDefault();
+            add();
+          } else if (e.key === "Backspace" && !input && tags.length) {
+            remove(tags.length - 1);
+          }
+        }}
+        onBlur={add}
+      />
+    </div>
+  );
 }

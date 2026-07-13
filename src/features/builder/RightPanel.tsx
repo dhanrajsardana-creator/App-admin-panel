@@ -1,72 +1,58 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import { SlidersHorizontal, FileText, Paintbrush, Layers, Trash2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { useBuilderStore } from "@/store/builderStore";
-import { useSections, usePatchSectionCache, useUpdateSection, useDeleteSection } from "@/hooks/useSections";
-import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { useSections, usePatchSectionCache, useDeleteSection } from "@/hooks/useSections";
 import { sectionLabel } from "@/config/sectionCatalog";
 import { getSectionSchema } from "./settings/schemas";
 import { FieldControl } from "./settings/FieldControl";
 import { ItemManager } from "./settings/ItemManager";
-import type { JsonMap, UpdateSectionPayload, VisibilityType } from "@/types";
+import { useState } from "react";
+import type { JsonMap, UpdateSectionPayload } from "@/types";
 
 export function RightPanel() {
   const selectedPageId = useBuilderStore((s) => s.selectedPageId);
   const selectedSectionId = useBuilderStore((s) => s.selectedSectionId);
   const selectSection = useBuilderStore((s) => s.selectSection);
+  const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
 
   const { data: sections } = useSections(selectedPageId);
   const section = sections?.find((s) => s.id === selectedSectionId) ?? null;
 
   const patchCache = usePatchSectionCache(selectedPageId);
-  const updateSection = useUpdateSection(selectedPageId);
   const deleteSection = useDeleteSection(selectedPageId);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Accumulate edits and flush them together after the user pauses typing.
-  const pending = useRef<UpdateSectionPayload>({});
-  const flush = useDebouncedCallback(() => {
-    if (!section) return;
-    const payload = pending.current;
-    pending.current = {};
-    if (Object.keys(payload).length === 0) return;
-    updateSection.mutate({ id: section.id, payload });
-  }, 600);
-
-  // Patch a top-level section field (title/subtitle/visibility…).
+  /**
+   * Patch a top-level section field (title/subtitle/visibility…).
+   * Updates the local preview cache immediately AND queues the edit for Publish.
+   */
   const patchField = useCallback(
     (patch: UpdateSectionPayload) => {
       if (!section) return;
       patchCache(section.id, patch); // instant preview
-      pending.current = { ...pending.current, ...patch };
-      flush();
+      queueSectionEdit(section.id, patch); // hold for Publish
     },
-    [section, patchCache, flush]
+    [section, patchCache, queueSectionEdit]
   );
 
-  // Patch a single configJson key.
+  /**
+   * Patch a single configJson key.
+   * Updates the local preview cache immediately AND queues the edit for Publish.
+   */
   const patchConfig = useCallback(
     (key: string, value: unknown) => {
       if (!section) return;
       const nextConfig: JsonMap = { ...(section.configJson ?? {}), [key]: value };
-      patchCache(section.id, { configJson: nextConfig });
-      pending.current = { ...pending.current, configJson: nextConfig };
-      flush();
+      patchCache(section.id, { configJson: nextConfig }); // instant preview
+      queueSectionEdit(section.id, { configJson: nextConfig }); // hold for Publish
     },
-    [section, patchCache, flush]
+    [section, patchCache, queueSectionEdit]
   );
 
   if (!section) {
@@ -159,19 +145,16 @@ export function RightPanel() {
               <Switch
                 checked={config.theme === "dark" || !!config.isDark}
                 onCheckedChange={(v) => {
-                  if (!section) return;
                   const nextConfig = {
                     ...(section.configJson ?? {}),
                     theme: v ? "dark" : "light",
                     isDark: v,
                   };
                   patchCache(section.id, { configJson: nextConfig });
-                  pending.current = { ...pending.current, configJson: nextConfig };
-                  flush();
+                  queueSectionEdit(section.id, { configJson: nextConfig });
                 }}
               />
             </div>
-
 
             {styleFields.length > 0 ? (
               <div className="space-y-3 border-t pt-3">

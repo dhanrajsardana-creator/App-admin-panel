@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import { Search, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { bool, num, str } from "@/utils/json";
@@ -317,146 +318,195 @@ export function BannerSection({ section, items }: SectionRendererProps) {
 /** hero_carousel — full-bleed swipeable slides with cinematic intro animation. */
 export function HeroCarouselSection({ section, items }: SectionRendererProps) {
   const config = section.configJson ?? {};
-  const showDots = bool(config, "showDots", true);
-  const showSearch = bool(config, "showSearch", true);
-  const searchPlaceholder = str(config, "searchPlaceholder") || "Search for T Shirt";
-  const showBrandName = bool(config, "showBrandName", true);
-  const brandName = str(config, "brandName") || "POWERLOOK";
+
+  // ── Read canonical configJson keys (same keys the admin settings panel writes) ──
+  const showBrandLogo = bool(config, "isBrandLogoEnabled", true);
+  const showSearch    = bool(config, "isSearchBoxEnabled", true);
+  const searchFixed   = str(config, "searchBoxFixedPlaceholder") || "Search for";
+
+  // searchBoxRotationalPlaceholders is a string[]
+  const rawRotational = config["searchBoxRotationalPlaceholders"];
+  const rotationals: string[] = Array.isArray(rawRotational)
+    ? rawRotational.map(String)
+    : ["T-shirts", "Shirts", "Jackets"];
+
+  // overlayingTexts[0] = first big line, [1] = second big line
+  const rawOverlaying = config["overlayingTexts"];
+  const overlayingTexts: string[] = Array.isArray(rawOverlaying)
+    ? rawOverlaying.map(String)
+    : [];
+  const overlayLine1 = overlayingTexts[0] ?? "BEYOND";
+  const overlayLine2 = overlayingTexts[1] ?? "ORDINARY";
+
+  const overlayingTitle  = str(config, "overlayingTitle");
+  const viewAllText      = str(config, "viewAllButtonText") || "Shop Now";
+  const showViewAll      = !!str(config, "viewAllButtonText") || !!str(config, "viewAllValue");
+
   const slides = items.length > 0 ? items : [null];
+
+  // Rotate the search keyword every 2.5 s (mirrors mobile app behaviour)
+  const [rotIdx, setRotIdx] = useState(0);
+  useEffect(() => {
+    if (rotationals.length <= 1) return;
+    const t = setInterval(() => setRotIdx((i) => (i + 1) % rotationals.length), 2500);
+    return () => clearInterval(t);
+  }, [rotationals.length]);
+
+  const currentKeyword = rotationals[rotIdx] ?? "";
 
   return (
     <div className="relative w-full">
-      {/* Brand name — fades in from top */}
-      {showBrandName && (
-        <div
-          className="hero-intro-brand absolute inset-x-0 top-0 z-30 flex items-center justify-center px-4 pt-3"
-        >
+
+      {/* ── Brand logo / name ── */}
+      {showBrandLogo && (
+        <div className="hero-intro-brand absolute inset-x-0 top-0 z-30 flex items-center justify-center px-4 pt-3">
           <span
             className="text-[10px] font-black tracking-[0.25em] text-white/90 drop-shadow-lg"
             style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
           >
-            ▣ {brandName}
+            ▣ POWERLOOK
           </span>
         </div>
       )}
 
-      {/* Search bar — slides down */}
+      {/* ── Search bar ── */}
       {showSearch && (
         <div
           className="hero-intro-search absolute inset-x-0 top-0 z-20 px-4"
-          style={{ paddingTop: showBrandName ? "2.2rem" : "3rem" }}
+          style={{ paddingTop: showBrandLogo ? "2.2rem" : "3rem" }}
         >
           <div className="flex items-center gap-2 border-b border-white/30 pb-2.5 text-white/90">
             <Search className="h-4 w-4 shrink-0" />
             <span className="text-[13px]">
-              Search for{" "}
-              <span className="font-semibold text-white">
-                {searchPlaceholder.replace(/^Search for\s*/i, "")}
+              {searchFixed}{" "}
+              <span
+                key={rotIdx}
+                className="font-semibold text-white"
+                style={{ animation: "fade-in-up 0.35s ease-out forwards" }}
+              >
+                {currentKeyword}
               </span>
             </span>
           </div>
         </div>
       )}
 
+      {/* ── Slides ── */}
       <div className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto">
         {slides.map((item, i) => {
           const meta = (item?.metadataJson ?? {}) as JsonMap;
+
+          // Background image: item-level first, then configJson.backgroundMediaValue
           const image =
             (item ? itemImage(item) : null) ||
             str(config, "backgroundMediaValue") ||
             "/figma-home/01-hero.png";
-          const overlayOpacity = num(meta, "overlayOpacity", num(config, "overlayOpacity", 0.2));
 
-          // Overlay text from item → meta → config → section → default
-          const overlayTitle = item?.title || str(meta, "overlayTitle") || str(config, "overlayTitle") || section.title || "BEYOND";
-          const overlaySubtitle = item?.subtitle || str(meta, "overlaySubtitle") || str(config, "overlaySubtitle") || section.subtitle || "ORDINARY";
+          const overlayOpacity = num(meta, "overlayOpacity", num(config, "overlayOpacity", 0.2));
           const textColor = str(meta, "textColor") || str(config, "textColor") || "#ffffff";
+
+          // Per-slide overlay lines (from item) fall back to section-level configJson
+          const line1 = item?.title   || str(meta, "overlayingTexts[0]") || overlayLine1;
+          const line2 = item?.subtitle || str(meta, "overlayingTexts[1]") || overlayLine2;
+
+          const revealStyle = (delay: number): React.CSSProperties => ({
+            opacity: 0,
+            animation: `hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s forwards`,
+          });
 
           return (
             <div
               key={item?.id ?? i}
               className="relative shrink-0 snap-center overflow-hidden bg-zinc-800 w-full h-[740px]"
             >
-              {/* Image with zoom-out animation */}
+              {/* Background image */}
               <div className="hero-intro-image h-full w-full">
                 <PreviewImage src={image} className="h-full w-full object-top" />
               </div>
 
-              {/* Overlay darken */}
-              <div
-                className="absolute inset-0 bg-black"
-                style={{ opacity: overlayOpacity }}
-              />
+              {/* Dark overlay */}
+              <div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
 
-              {/* Overlay text — reveals with stagger, positioned at bottom with line dividers */}
-              {(overlayTitle || overlaySubtitle) && (
-                <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-stretch"
-                  style={{ paddingBottom: "15%" }}
-                >
-                  {overlayTitle && (
-                    <>
-                      <div
-                        className="h-px w-full"
-                        style={{
-                          backgroundColor: "rgba(255,255,255,0.25)",
-                          opacity: 0,
-                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.3s forwards",
-                        }}
-                      />
-                      <h2
-                        className="py-3 text-center text-[32px] font-extrabold uppercase leading-none drop-shadow-lg"
-                        style={{
-                          color: textColor,
-                          fontFamily: "'Bebas Neue', 'Oswald', sans-serif",
-                          letterSpacing: "0.05em",
-                          opacity: 0,
-                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.4s forwards",
-                        }}
-                      >
-                        {overlayTitle}
-                      </h2>
-                    </>
-                  )}
-                  {overlaySubtitle && (
-                    <>
-                      <div
-                        className="h-px w-full"
-                        style={{
-                          backgroundColor: "rgba(255,255,255,0.25)",
-                          opacity: 0,
-                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.65s forwards",
-                        }}
-                      />
-                      <p
-                        className="py-3 text-center text-[32px] font-extrabold uppercase leading-none drop-shadow-lg"
-                        style={{
-                          color: textColor,
-                          fontFamily: "'Bebas Neue', 'Oswald', sans-serif",
-                          letterSpacing: "0.05em",
-                          opacity: 0,
-                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.8s forwards",
-                        }}
-                      >
-                        {overlaySubtitle}
-                      </p>
-                      <div
-                        className="h-px w-full"
-                        style={{
-                          backgroundColor: "rgba(255,255,255,0.25)",
-                          opacity: 0,
-                          animation: "hero-text-reveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) 1.95s forwards",
-                        }}
-                      />
-                    </>
-                  )}
-                </div>
-              )}
+              {/* ── Overlay text block at bottom ── */}
+              <div
+                className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-stretch"
+                style={{ paddingBottom: "15%" }}
+              >
+                {/* Optional title above the lines (overlayingTitle) */}
+                {overlayingTitle && (
+                  <p
+                    className="pb-2 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-white/70 drop-shadow"
+                    style={revealStyle(1.1)}
+                  >
+                    {overlayingTitle}
+                  </p>
+                )}
+
+                {/* Line 1 */}
+                {line1 && (
+                  <>
+                    <div
+                      className="h-px w-full"
+                      style={{ backgroundColor: "rgba(255,255,255,0.25)", ...revealStyle(1.3) }}
+                    />
+                    <h2
+                      className="py-3 text-center text-[32px] font-extrabold uppercase leading-none drop-shadow-lg"
+                      style={{
+                        color: textColor,
+                        fontFamily: "'Bebas Neue', 'Oswald', sans-serif",
+                        letterSpacing: "0.05em",
+                        ...revealStyle(1.4),
+                      }}
+                    >
+                      {line1}
+                    </h2>
+                  </>
+                )}
+
+                {/* Line 2 */}
+                {line2 && (
+                  <>
+                    <div
+                      className="h-px w-full"
+                      style={{ backgroundColor: "rgba(255,255,255,0.25)", ...revealStyle(1.65) }}
+                    />
+                    <p
+                      className="py-3 text-center text-[32px] font-extrabold uppercase leading-none drop-shadow-lg"
+                      style={{
+                        color: textColor,
+                        fontFamily: "'Bebas Neue', 'Oswald', sans-serif",
+                        letterSpacing: "0.05em",
+                        ...revealStyle(1.8),
+                      }}
+                    >
+                      {line2}
+                    </p>
+                    <div
+                      className="h-px w-full"
+                      style={{ backgroundColor: "rgba(255,255,255,0.25)", ...revealStyle(1.95) }}
+                    />
+                  </>
+                )}
+
+                {/* View-all button */}
+                {showViewAll && (
+                  <div className="mt-4 flex justify-center" style={revealStyle(2.1)}>
+                    <button
+                      className="flex items-center gap-1.5 rounded-full border border-white/60 bg-white/10 px-5 py-2 text-[11px] font-bold uppercase tracking-widest text-white backdrop-blur-sm"
+                    >
+                      {viewAllText}
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {showDots && slides.length > 0 && (
+      {/* Pagination dots */}
+      {slides.length > 1 && (
         <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
           {slides.map((_, i) => (
             <span

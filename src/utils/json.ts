@@ -24,7 +24,12 @@ export function bool(
   fallback = false
 ): boolean {
   const v = map?.[key];
-  return typeof v === "boolean" ? v : fallback;
+  if (typeof v === "boolean") return v;
+  if (typeof v === "string") {
+    if (v === "true") return true;
+    if (v === "false") return false;
+  }
+  return fallback;
 }
 
 export function arr<T = unknown>(
