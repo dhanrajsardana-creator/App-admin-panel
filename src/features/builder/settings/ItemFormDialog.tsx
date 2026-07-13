@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -20,8 +20,120 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/common/Spinner";
 import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
-import { useShopifyProducts } from "@/hooks/useShopify";
+import { useShopifyProducts, useShopifyCollections } from "@/hooks/useShopify";
 import type { JsonMap, SectionItem, UpdateItemPayload } from "@/types";
+
+// ── Searchable Input (Combobox) ─────────────────────────────────────────────
+import { createPortal } from "react-dom";
+
+function SearchableInput({ 
+  value, 
+  onChange, 
+  options, 
+  placeholder 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  options: { label: string; value: string }[]; 
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  
+  // Find initial label if value exists
+  const initialLabel = options.find(o => o.value === value)?.label || value;
+  const [search, setSearch] = useState(initialLabel);
+  
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState<{top: number, left: number, width: number} | null>(null);
+
+  // Sync search input with value when it changes externally
+  useEffect(() => {
+    if (!open) {
+      const selected = options.find(o => o.value === value);
+      setSearch(selected ? selected.label : value);
+    }
+  }, [value, open, options]);
+
+  // Update coordinates when opened or search changes
+  useEffect(() => {
+    if (open && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width
+      });
+    }
+  }, [open, search]);
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        wrapperRef.current && !wrapperRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // (Removed aggressive window scroll listener to avoid closing the dropdown improperly)
+
+  const filtered = options.filter(o => 
+    o.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="relative" ref={wrapperRef}>
+      <Input
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => {
+          setSearch("");
+          setOpen(true);
+        }}
+        placeholder={placeholder}
+      />
+      {open && coords && createPortal(
+        <div 
+          ref={dropdownRef}
+          className="fixed z-[60] max-h-60 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md pointer-events-auto"
+          style={{ top: coords.top, left: coords.left, width: coords.width }}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          {filtered.length === 0 ? (
+            <div className="p-2 text-sm text-muted-foreground text-center">No results found.</div>
+          ) : (
+            filtered.map((opt) => (
+              <div
+                key={opt.value}
+                className="cursor-pointer hover:bg-accent hover:text-accent-foreground px-2 py-1.5 text-sm border-b last:border-0 border-border"
+                onClick={() => {
+                  onChange(opt.value);
+                  setSearch(opt.label);
+                  setOpen(false);
+                }}
+              >
+                <div className="truncate">{opt.label}</div>
+                <div className="text-[10px] text-muted-foreground truncate">{opt.value}</div>
+              </div>
+            ))
+          )}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
 
 // ── Inline metadata form ────────────────────────────────────────────────────
 // Renders each key of a flat JSON object as a labeled input.
@@ -112,6 +224,7 @@ export function ItemFormDialog({
   const isNewDrop = sectionType === "new_drop_products";
   const isProductShelf = sectionType === "product_shelf";
   const { data: allProducts } = useShopifyProducts();
+  const { data: allCollections } = useShopifyCollections();
 
   const [form, setForm] = useState<UpdateItemPayload>({});
   const [metaJson, setMetaJson] = useState<JsonMap>({});
@@ -168,7 +281,11 @@ export function ItemFormDialog({
     const payload: UpdateItemPayload = {
       ...form,
       referenceType:
-        form.referenceType === "NONE" ? null : (form.referenceType as string),
+        !form.referenceType || form.referenceType === "NONE" ? null : (form.referenceType as string),
+      referenceId: !form.referenceId ? null : (form.referenceId as string),
+      redirectType:
+        !form.redirectType || form.redirectType === "NONE" ? null : (form.redirectType as string),
+      redirectValue: !form.redirectValue ? null : (form.redirectValue as string),
       metadataJson,
     };
     if (form.referenceType === "PRODUCT" && form.referenceId && allProducts) {
@@ -181,7 +298,6 @@ export function ItemFormDialog({
         payload.redirectValue = product.id;
         payload.metadataJson = {
           ...(payload.metadataJson ?? {}),
-          price: product.price,
           productHandle: product.handle,
           productId: product.id,
         };
@@ -204,6 +320,8 @@ export function ItemFormDialog({
   const isHeroCarousel = sectionType === "hero_carousel";
   const isMoodGrid = sectionType === "mood_grid";
   const isPromoHero = sectionType === "promo_hero";
+  const isCategoryGrid = sectionType === "category_grid";
+  const isExclusiveOffers = sectionType === "exlusive_offers";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -282,33 +400,180 @@ export function ItemFormDialog({
               </div>
             ) : null}
           </div>
-        ) : (isNewDrop || isProductShelf) ? (
+        ) : (isCategoryGrid || isExclusiveOffers) ? (
           <div className="grid gap-3">
             <div className="space-y-1.5">
-              <Label>Reference type</Label>
-              <Select
-                value={(form.referenceType as string) ?? "PRODUCT"}
-                onValueChange={(v) => set("referenceType", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PRODUCT">PRODUCT</SelectItem>
-                  <SelectItem value="COLLECTION">COLLECTION</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>
-                {form.referenceType === "COLLECTION" ? "Collection ID" : "Product ID"}
-              </Label>
+              <Label>Title</Label>
               <Input
-                value={(form.referenceId as string) ?? ""}
-                onChange={(e) => set("referenceId", e.target.value)}
-                placeholder={form.referenceType === "COLLECTION" ? "e.g. 44961808" : "e.g. 44961809"}
-                className="font-mono text-xs"
+                value={(form.title as string) ?? ""}
+                onChange={(e) => set("title", e.target.value)}
               />
+            </div>
+
+            <div className="grid gap-3">
+              <div className="space-y-1.5">
+                <Label>Redirect Type</Label>
+                <Select
+                  value={(form.redirectType as string) ?? "NONE"}
+                  onValueChange={(v) => set("redirectType", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">NONE</SelectItem>
+                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
+                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
+                    <SelectItem value="URL">URL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Redirect Value</Label>
+                {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
+                  <SearchableInput
+                    value={(form.redirectValue as string) ?? ""}
+                    placeholder="Search handle..."
+                    options={
+                      form.redirectType === "PRODUCT" 
+                        ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
+                        : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
+                    }
+                    onChange={(val) => {
+                      setForm(f => {
+                        const next = { ...f, redirectValue: val };
+                        if (next.redirectType === "PRODUCT") {
+                          const p = allProducts?.find(p => p.handle === val);
+                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = p.id; }
+                        } else {
+                          const c = allCollections?.find(c => c.handle === val);
+                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = c.id; }
+                        }
+                        return next;
+                      });
+                    }}
+                  />
+                ) : (
+                  <Input
+                    value={(form.redirectValue as string) ?? ""}
+                    onChange={(e) => set("redirectValue", e.target.value)}
+                    placeholder="e.g. bottoms-jeans-cargo"
+                  />
+                )}
+              </div>
+            </div>
+            <div className="grid gap-3">
+              <div className="space-y-1.5">
+                <Label>Media Type</Label>
+                <Select
+                  value={((form.metadataJson as Record<string, unknown>)?.backgroundMediaType as string) || "IMAGE"}
+                  onValueChange={(v) => {
+                    setForm((f) => ({
+                      ...f,
+                      metadataJson: {
+                        ...((f.metadataJson as Record<string, unknown>) ?? {}),
+                        backgroundMediaType: v,
+                      },
+                    }));
+                    setMetaJson((m) => ({ ...m, backgroundMediaType: v }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="IMAGE">IMAGE</SelectItem>
+                    <SelectItem value="GIF">GIF</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Media URL</Label>
+                <Input
+                  value={(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string)) ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setForm((f) => ({ 
+                      ...f, 
+                      imageUrl: val,
+                      mobileImageUrl: val,
+                      metadataJson: { 
+                        ...((f.metadataJson as Record<string, unknown>) ?? {}), 
+                        backgroundMediaValue: val,
+                      } 
+                    }));
+                    setMetaJson((m) => ({
+                      ...m,
+                      backgroundMediaValue: val,
+                    }));
+                  }}
+                  placeholder="https://…"
+                />
+              </div>
+            </div>
+            {(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string)) ? (
+              <div className="overflow-hidden rounded-md border bg-muted p-1">
+                <img
+                  src={(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string))}
+                  alt="Preview"
+                  className="h-24 w-full object-cover"
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : (isNewDrop || isProductShelf) ? (
+          <div className="grid gap-3">
+            <div className="grid gap-3">
+              <div className="space-y-1.5">
+                <Label>Redirect Type</Label>
+                <Select
+                  value={(form.redirectType as string) ?? "NONE"}
+                  onValueChange={(v) => set("redirectType", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">NONE</SelectItem>
+                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
+                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
+                    <SelectItem value="URL">URL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Redirect Value</Label>
+                {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
+                  <SearchableInput
+                    value={(form.redirectValue as string) ?? ""}
+                    placeholder="Search handle..."
+                    options={
+                      form.redirectType === "PRODUCT" 
+                        ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
+                        : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
+                    }
+                    onChange={(val) => {
+                      setForm(f => {
+                        const next = { ...f, redirectValue: val };
+                        if (next.redirectType === "PRODUCT") {
+                          const p = allProducts?.find(p => p.handle === val);
+                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = p.id; }
+                        } else {
+                          const c = allCollections?.find(c => c.handle === val);
+                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = c.id; }
+                        }
+                        return next;
+                      });
+                    }}
+                  />
+                ) : (
+                  <Input
+                    value={(form.redirectValue as string) ?? ""}
+                    onChange={(e) => set("redirectValue", e.target.value)}
+                    placeholder="e.g. tops-tshirts"
+                  />
+                )}
+              </div>
             </div>
           </div>
         ) : isPromoHero ? (
@@ -340,7 +605,7 @@ export function ItemFormDialog({
                 />
               </div>
             ) : null}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3">
               <div className="space-y-1.5">
                 <Label>Reference type</Label>
                 <Select
@@ -449,7 +714,7 @@ export function ItemFormDialog({
               </div>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3">
               <div className="space-y-1.5">
                 <Label>Badge text</Label>
                 <Input
@@ -467,7 +732,7 @@ export function ItemFormDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3">
               <div className="space-y-1.5">
                 <Label>Reference type</Label>
                 <Select

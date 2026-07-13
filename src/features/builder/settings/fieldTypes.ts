@@ -8,13 +8,14 @@ export type FieldDef = (
   | { kind: "switch"; key: string; label: string; group: FieldGroup }
   | { kind: "file"; key: string; label: string; group: FieldGroup }
   | {
-      kind: "select";
-      key: string;
-      label: string;
-      options: { value: string; label: string }[];
-      group: FieldGroup;
-    }
+    kind: "select";
+    key: string;
+    label: string;
+    options: { value: string; label: string }[];
+    group: FieldGroup;
+  }
   | { kind: "tags"; key: string; label: string; placeholder?: string; group: FieldGroup }
+  | { kind: "media_url"; key: string; typeKey?: string; label: string; group: FieldGroup }
 ) & { isRoot?: boolean };
 
 export interface SectionSchema {

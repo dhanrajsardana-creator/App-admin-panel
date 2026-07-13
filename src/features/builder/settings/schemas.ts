@@ -40,7 +40,7 @@ const bannerFields: FieldDef[] = [
 
 export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   banner: { fields: bannerFields },
-  featured_collection_products: { 
+  featured_collection_products: {
     fields: [
       { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
       { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
@@ -66,14 +66,23 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   new_drop_products: {
     fields: [
-      { kind: "text", key: "priceLabel", label: "Price label (default)", group: "content" },
+      { kind: "text", key: "title", label: "Section title", isRoot: true, group: "content" },
+      { kind: "text", key: "itemPriceLabel", label: "Price label (e.g. Get it For)", group: "content" },
       { kind: "text", key: "buttonText", label: "Button text", group: "content" },
     ],
   },
 
   exlusive_offers: {
     fields: [
-      { kind: "text", key: "backgroundImage", label: "Background image URL", group: "content" },
+      { kind: "text", key: "title", label: "Section title", isRoot: true, group: "content" },
+      { kind: "select", key: "redirectType", label: "Redirect Type", options: [
+        { label: "NONE", value: "NONE" },
+        { label: "COLLECTION", value: "COLLECTION" },
+        { label: "PRODUCT", value: "PRODUCT" },
+        { label: "URL", value: "URL" }
+      ], group: "content" },
+      { kind: "text", key: "redirectValue", label: "Redirect Value", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
     ],
   },
 
@@ -250,7 +259,7 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
       ],
     };
   }
-  
+
   if (sectionKey === "TRENDING_SHOWCASE") {
     return {
       fields: [

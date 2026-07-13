@@ -144,6 +144,35 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
       );
     }
 
+    case "media_url":
+      return (
+        <div className="grid gap-3">
+          <div className="space-y-1.5">
+            <Label>Media Type</Label>
+            <Select
+              value={str(config, field.typeKey) || "IMAGE"}
+              onValueChange={(v) => onChange(field.typeKey, v)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="IMAGE">IMAGE</SelectItem>
+                <SelectItem value="GIF">GIF</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>{field.label}</Label>
+            <Input
+              value={str(config, field.key) || field.placeholder || ""}
+              placeholder={field.placeholder || "https://..."}
+              onChange={(e) => onChange(field.key, e.target.value)}
+            />
+          </div>
+        </div>
+      );
+
     default:
       return null;
   }

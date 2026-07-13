@@ -34,11 +34,7 @@ export function CategoryGridSection({ section, items }: SectionRendererProps) {
               className="relative w-full overflow-hidden bg-zinc-100 aspect-square rounded-lg"
             >
               <PreviewImage src={it ? itemImage(it) : null} className="h-full w-full" />
-              {it?.badgeText && (
-                <span className="absolute right-0 top-0 rounded-bl bg-rose-500 px-1 text-[8px] font-bold text-white">
-                  {it.badgeText}
-                </span>
-              )}
+
             </div>
             {showLabel && (
               <span className="line-clamp-1 text-center text-[10px] font-medium text-zinc-700">
