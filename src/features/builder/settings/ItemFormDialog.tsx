@@ -117,6 +117,8 @@ export function ItemFormDialog({
   const isNewDrop = sectionType === "new_drop_products";
   const isProductShelf = sectionType === "product_shelf";
   const isCategoryProductsShelf = sectionType === "category_products_shelf";
+  const isCarousel = sectionType === "CAROUSEL" || sectionType === "carousel";
+  const isList = sectionType === "LIST" || sectionType === "list";
   const { data: allProducts } = useShopifyProducts();
   const { data: allCollections } = useShopifyCollections();
 
@@ -133,7 +135,7 @@ export function ItemFormDialog({
       mobileImageUrl: item?.mobileImageUrl ?? "",
       videoUrl: item?.videoUrl ?? "",
       badgeText: item?.badgeText ?? "",
-      itemType: item?.itemType ?? ((isNewDrop || isProductShelf || isCategoryProductsShelf) ? "product" : ""),
+      itemType: item?.itemType ?? ((isNewDrop || isProductShelf || isCategoryProductsShelf) ? "product" : (isCarousel ? "PROMO_BANNER" : (isList ? "NAVIGATION_ITEM" : ""))),
       referenceType: item?.referenceType ?? ((isNewDrop || isProductShelf || isCategoryProductsShelf) ? "PRODUCT" : "NONE"),
       referenceId: item?.referenceId ?? "",
       redirectType: item?.redirectType ?? "",
@@ -141,7 +143,7 @@ export function ItemFormDialog({
       metadataJson: initialMeta,
     });
     setMetaJson(initialMeta);
-  }, [open, item, isNewDrop, isProductShelf, isCategoryProductsShelf]);
+  }, [open, item, isNewDrop, isProductShelf, isCategoryProductsShelf, isCarousel, isList]);
 
   useEffect(() => {
     if (form.referenceType === "PRODUCT" && form.referenceId && allProducts) {
@@ -172,8 +174,8 @@ export function ItemFormDialog({
       metadataJson.backgroundMediaType = "IMAGE";
       metadataJson.backgroundMediaValue = imageVal;
     }
-    if (sectionType === "lookbook_grid") {
-      const titleVal = (form.title as string) || "SHOP";
+    if (sectionType === "lookbook_grid" || isCarousel) {
+      const titleVal = (form.title as string) || (isCarousel ? "" : "SHOP");
       const imageVal = (form.imageUrl as string) || "";
       metadataJson.overlayingTexts = [titleVal];
       metadataJson.backgroundMediaType = metadataJson.backgroundMediaType || "IMAGE";
@@ -224,7 +226,6 @@ export function ItemFormDialog({
   const isCategoryGrid = sectionType === "category_grid";
   const isExclusiveOffers = sectionType === "exlusive_offers";
   const isLookbookGrid = sectionType === "lookbook_grid";
-  const isList = sectionType === "LIST" || sectionType === "list";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -236,16 +237,22 @@ export function ItemFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {isHeroCarousel || isLookbookGrid ? (
+        {isHeroCarousel || isLookbookGrid || isCarousel ? (
           <div className="grid gap-3">
             <div className="space-y-1.5">
-              <Label>{isLookbookGrid ? "Card Label (e.g. SHOP TOPWEAR)" : "Overlay Title (BEYOND)"}</Label>
+              <Label>
+                {isCarousel 
+                  ? "Title" 
+                  : isLookbookGrid 
+                    ? "Card Label (e.g. SHOP TOPWEAR)" 
+                    : "Overlay Title (BEYOND)"}
+              </Label>
               <Input
                 value={(form.title as string) ?? ""}
                 onChange={(e) => set("title", e.target.value)}
               />
             </div>
-            {!isLookbookGrid && (
+            {!isLookbookGrid && !isCarousel && (
               <div className="space-y-1.5">
                 <Label>Overlay Subtitle (ORDINARY)</Label>
                 <Input
@@ -256,10 +263,9 @@ export function ItemFormDialog({
             )}
             <div className="space-y-1.5">
               <Label>Image URL / Link</Label>
-              <Input
+              <ImageUploadInput
                 value={(form.imageUrl as string) ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
+                onChange={(val) => {
                   setForm((f) => ({ ...f, imageUrl: val, mobileImageUrl: val }));
                 }}
                 placeholder="https://…"

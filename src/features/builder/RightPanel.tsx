@@ -142,7 +142,7 @@ export function RightPanel() {
             <TabsTrigger value="style">
               <Paintbrush /> Style
             </TabsTrigger>
-            {section.sectionType !== "exlusive_offers" && section.sectionType !== "collection_with_products" && (
+            {section.sectionType !== "exlusive_offers" && section.sectionType !== "collection_with_products" && section.sectionType?.toLowerCase() !== "input_field" && (
               <TabsTrigger value="items">
                 <Layers /> Items
               </TabsTrigger>
@@ -199,7 +199,7 @@ export function RightPanel() {
             )}
           </TabsContent>
 
-          {section.sectionType !== "exlusive_offers" && (
+          {section.sectionType !== "exlusive_offers" && section.sectionType?.toLowerCase() !== "input_field" && (
             <TabsContent value="items" className="mt-0">
               <ItemManager section={section} />
             </TabsContent>

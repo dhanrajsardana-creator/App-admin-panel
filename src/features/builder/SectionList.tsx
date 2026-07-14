@@ -199,6 +199,7 @@ export function SectionList({ pageId }: { pageId: string }) {
   const { data: pages } = usePages();
   const page = pages?.find((p) => p.id === pageId) ?? null;
   const isPdp = page?.pageType === "PRODUCT" && page?.pageKey !== "SEARCH_HOME";
+  const isPdpOrSearchHome = isPdp || page?.pageKey === "SEARCH_HOME";
 
   const qc = useQueryClient();
   const patchCache = usePatchSectionCache(pageId);
@@ -233,7 +234,7 @@ export function SectionList({ pageId }: { pageId: string }) {
     const next = arrayMove(localOrder, oldIndex, newIndex);
     setLocalOrder(next);
 
-    if (isPdp) {
+    if (isPdpOrSearchHome) {
       // Optimistically update the react-query cache with new sortOrders
       const nextWithSort = next.map((s, i) => ({ ...s, sortOrder: i }));
       qc.setQueryData<Section[]>(qk.sections(pageId), nextWithSort);
@@ -303,7 +304,7 @@ export function SectionList({ pageId }: { pageId: string }) {
                   resolve={resolve}
                   onSelect={() => selectSection(section.id)}
                   onToggleVisible={() => {
-                    if (isPdp) {
+                    if (isPdpOrSearchHome) {
                       const nextVisible = !section.isVisible;
                       patchCache(section.id, { isVisible: nextVisible });
                       queueSectionEdit(section.id, { isVisible: nextVisible });
