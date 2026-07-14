@@ -158,7 +158,13 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
   const config = section.configJson ?? {};
   const watermark = section.title || str(config, "watermarkText") || "NEW DROP";
   const buttonText = str(config, "buttonText") || "SHOP THE LOOK";
-  const defaultPrice = str(config, "priceLabel") || "GET IT FOR ₹599";
+
+  const itemPriceLabel = str(config, "itemPriceLabel");
+
+  const getPrice = (rawPrice: any, fallback: string = "₹599") => {
+    const amount = rawPrice ? (typeof rawPrice === "object" ? rawPrice.formatted : rawPrice) : fallback;
+    return itemPriceLabel ? `${itemPriceLabel} ${amount}` : amount;
+  };
 
   const productItems = items.filter((it) => it.referenceType === "PRODUCT");
   const collectionItem = items.find((it) => it.referenceType === "COLLECTION");
@@ -170,35 +176,38 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
   const shopifyProducts = collectionData?.products || [];
   const limit = collectionItem ? num(collectionItem.metadataJson, "productLimit", 5) : 5;
 
-  let cards: { image: string | null; price: string | null }[] = [];
+  let cards: { image: string | null; price: string | null; handle?: string }[] = [];
   if (productItems.length > 0) {
     cards = productItems.map((item) => {
       const prod = allProducts?.find((p) => String(p.id) === String(item.referenceId));
       return {
         image: prod?.imageUrl || itemImage(item),
-        price: prod?.price || item.subtitle || defaultPrice,
+        price: getPrice((prod as any)?.price, item.subtitle || "₹599"),
+        handle: prod?.handle,
       };
     });
   } else if (shopifyProducts.length > 0) {
     cards = shopifyProducts.slice(0, limit).map((p) => ({
       image: p.imageUrl,
-      price: p.price || defaultPrice,
+      price: getPrice(p.price),
+      handle: p.handle,
     }));
   } else if (allProducts && allProducts.length > 0) {
     cards = allProducts.slice(0, limit).map((p) => ({
       image: p.imageUrl,
-      price: p.price || defaultPrice,
+      price: getPrice((p as any).price),
+      handle: p.handle,
     }));
   } else if (items.length > 0) {
     cards = items.map((it) => ({
       image: itemImage(it),
-      price: it.subtitle || defaultPrice,
+      price: getPrice(it.subtitle),
     }));
   } else {
     cards = [
-      { image: "/promo/new-drop-card.png", price: defaultPrice },
-      { image: "/promo/new-drop-card.png", price: defaultPrice },
-      { image: "/promo/new-drop-card.png", price: defaultPrice },
+      { image: "/promo/new-drop-card.png", price: "₹599" },
+      { image: "/promo/new-drop-card.png", price: "₹599" },
+      { image: "/promo/new-drop-card.png", price: "₹599" },
     ];
   }
 
@@ -355,7 +364,7 @@ export function ExclusiveOffersSection({ section, items }: SectionRendererProps)
   let offers: string[] = [];
   if (hasItemImages && activeItem) {
     if (activeItem.title || activeItem.subtitle) {
-      offers = [activeItem.title, activeItem.subtitle].filter(Boolean);
+      offers = [activeItem.title || "", activeItem.subtitle || ""].filter(Boolean);
     } else {
       offers = [];
     }

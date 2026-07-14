@@ -103,9 +103,11 @@ export function RightPanel() {
             <TabsTrigger value="style">
               <Paintbrush /> Style
             </TabsTrigger>
-            <TabsTrigger value="items">
-              <Layers /> Items
-            </TabsTrigger>
+            {section.sectionType !== "exlusive_offers" && section.sectionType !== "collection_with_products" && (
+              <TabsTrigger value="items">
+                <Layers /> Items
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -140,22 +142,6 @@ export function RightPanel() {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-md border px-3 py-2">
-              <Label className="text-sm text-foreground">Dark mode</Label>
-              <Switch
-                checked={config.theme === "dark" || !!config.isDark}
-                onCheckedChange={(v) => {
-                  const nextConfig = {
-                    ...(section.configJson ?? {}),
-                    theme: v ? "dark" : "light",
-                    isDark: v,
-                  };
-                  patchCache(section.id, { configJson: nextConfig });
-                  queueSectionEdit(section.id, { configJson: nextConfig });
-                }}
-              />
-            </div>
-
             {styleFields.length > 0 ? (
               <div className="space-y-3 border-t pt-3">
                 {styleFields.map((f) => (
@@ -174,10 +160,11 @@ export function RightPanel() {
             )}
           </TabsContent>
 
-          {/* ITEMS */}
-          <TabsContent value="items" className="mt-0">
-            <ItemManager section={section} />
-          </TabsContent>
+          {section.sectionType !== "exlusive_offers" && (
+            <TabsContent value="items" className="mt-0">
+              <ItemManager section={section} />
+            </TabsContent>
+          )}
         </div>
       </Tabs>
 
