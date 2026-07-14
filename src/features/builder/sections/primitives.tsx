@@ -53,15 +53,15 @@ export function itemImage(item: SectionItem): string | null {
 export function SectionHeading({
   title,
   subtitle,
-  showViewAll,
-  viewAllText,
+  isViewAllButtonEnabled,
+  viewAllButtonText,
   align = "left",
   titleColor,
 }: {
   title?: string | null;
   subtitle?: string | null;
-  showViewAll?: boolean;
-  viewAllText?: string;
+  isViewAllButtonEnabled?: boolean;
+  viewAllButtonText?: string;
   align?: "left" | "center";
   titleColor?: string;
 }) {
@@ -69,7 +69,7 @@ export function SectionHeading({
   const isMoodGrid = titleLower.includes("feeling smooth") || titleLower.includes("wild");
   
   const resolvedAlign = isMoodGrid ? "center" : align;
-  const resolvedShowViewAll = isMoodGrid ? false : showViewAll;
+  const resolvedShowViewAll = isMoodGrid ? false : isViewAllButtonEnabled;
 
   if (!title && !subtitle && !resolvedShowViewAll) return null;
   return (
@@ -94,7 +94,7 @@ export function SectionHeading({
       </div>
       {resolvedShowViewAll && resolvedAlign === "left" && (
         <button className="shrink-0 text-xs font-medium text-zinc-500">
-          {viewAllText || "View all"}
+          {viewAllButtonText || "View all"}
         </button>
       )}
     </div>
@@ -111,6 +111,8 @@ export function ProductCard({
   image,
   title,
   price,
+  compareAtPrice,
+  discountPercent,
   config,
   dark = false,
 }: {
@@ -118,6 +120,8 @@ export function ProductCard({
   image?: string | null;
   title?: string | null;
   price?: string | null;
+  compareAtPrice?: string | null;
+  discountPercent?: number | string | null;
   config?: JsonMap;
   dark?: boolean;
 }) {
@@ -154,9 +158,9 @@ export function ProductCard({
           </p>
           <div className="flex items-center gap-1.5">
             <span className={`text-[13px] font-bold ${dark ? "text-white" : "text-zinc-900"}`}>{price || "₹2,500"}</span>
-            <span className={`text-[10px] line-through ${dark ? "text-zinc-500" : "text-zinc-400"}`}>₹3,200</span>
-            {config?.showDiscountBadge !== false && (
-              <span className={`text-[10px] font-semibold ${dark ? "text-orange-400" : "text-orange-500"}`}>20% Off</span>
+            {compareAtPrice && <span className={`text-[10px] line-through ${dark ? "text-zinc-500" : "text-zinc-400"}`}>{compareAtPrice}</span>}
+            {config?.showDiscountBadge !== false && discountPercent && (
+              <span className={`text-[10px] font-semibold ${dark ? "text-orange-400" : "text-orange-500"}`}>{discountPercent}% Off</span>
             )}
           </div>
           {showMember && (

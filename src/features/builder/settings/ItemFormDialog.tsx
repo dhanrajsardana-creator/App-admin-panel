@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,10 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { ImageUploadInput } from "@/components/common/ImageUploadInput";
 import { Spinner } from "@/components/common/Spinner";
 import { useCreateItem, useUpdateItem } from "@/hooks/useItems";
-import { useShopifyProducts } from "@/hooks/useShopify";
+import { useShopifyProducts, useShopifyCollections } from "@/hooks/useShopify";
 import type { JsonMap, SectionItem, UpdateItemPayload } from "@/types";
+import { SearchableInput } from "@/components/common/SearchableInput";
+
+// ── Item Form Dialog ────────────────────────────────────────────────────────
 
 // ── Inline metadata form ────────────────────────────────────────────────────
 // Renders each key of a flat JSON object as a labeled input.
@@ -111,7 +116,9 @@ export function ItemFormDialog({
   const updateItem = useUpdateItem(sectionId);
   const isNewDrop = sectionType === "new_drop_products";
   const isProductShelf = sectionType === "product_shelf";
+  const isCategoryProductsShelf = sectionType === "category_products_shelf";
   const { data: allProducts } = useShopifyProducts();
+  const { data: allCollections } = useShopifyCollections();
 
   const [form, setForm] = useState<UpdateItemPayload>({});
   const [metaJson, setMetaJson] = useState<JsonMap>({});
@@ -126,15 +133,15 @@ export function ItemFormDialog({
       mobileImageUrl: item?.mobileImageUrl ?? "",
       videoUrl: item?.videoUrl ?? "",
       badgeText: item?.badgeText ?? "",
-      itemType: item?.itemType ?? ((isNewDrop || isProductShelf) ? "product" : ""),
-      referenceType: item?.referenceType ?? ((isNewDrop || isProductShelf) ? "PRODUCT" : "NONE"),
+      itemType: item?.itemType ?? ((isNewDrop || isProductShelf || isCategoryProductsShelf) ? "product" : ""),
+      referenceType: item?.referenceType ?? ((isNewDrop || isProductShelf || isCategoryProductsShelf) ? "PRODUCT" : "NONE"),
       referenceId: item?.referenceId ?? "",
       redirectType: item?.redirectType ?? "",
       redirectValue: item?.redirectValue ?? "",
       metadataJson: initialMeta,
     });
     setMetaJson(initialMeta);
-  }, [open, item, isNewDrop, isProductShelf]);
+  }, [open, item, isNewDrop, isProductShelf, isCategoryProductsShelf]);
 
   useEffect(() => {
     if (form.referenceType === "PRODUCT" && form.referenceId && allProducts) {
@@ -165,10 +172,21 @@ export function ItemFormDialog({
       metadataJson.backgroundMediaType = "IMAGE";
       metadataJson.backgroundMediaValue = imageVal;
     }
+    if (sectionType === "lookbook_grid") {
+      const titleVal = (form.title as string) || "SHOP";
+      const imageVal = (form.imageUrl as string) || "";
+      metadataJson.overlayingTexts = [titleVal];
+      metadataJson.backgroundMediaType = metadataJson.backgroundMediaType || "IMAGE";
+      metadataJson.backgroundMediaValue = imageVal;
+    }
     const payload: UpdateItemPayload = {
       ...form,
       referenceType:
-        form.referenceType === "NONE" ? null : (form.referenceType as string),
+        !form.referenceType || form.referenceType === "NONE" ? null : (form.referenceType as string),
+      referenceId: !form.referenceId ? null : (form.referenceId as string),
+      redirectType:
+        !form.redirectType || form.redirectType === "NONE" ? null : (form.redirectType as string),
+      redirectValue: !form.redirectValue ? null : (form.redirectValue as string),
       metadataJson,
     };
     if (form.referenceType === "PRODUCT" && form.referenceId && allProducts) {
@@ -181,7 +199,6 @@ export function ItemFormDialog({
         payload.redirectValue = product.id;
         payload.metadataJson = {
           ...(payload.metadataJson ?? {}),
-          price: product.price,
           productHandle: product.handle,
           productId: product.id,
         };
@@ -204,6 +221,9 @@ export function ItemFormDialog({
   const isHeroCarousel = sectionType === "hero_carousel";
   const isMoodGrid = sectionType === "mood_grid";
   const isPromoHero = sectionType === "promo_hero";
+  const isCategoryGrid = sectionType === "category_grid";
+  const isExclusiveOffers = sectionType === "exlusive_offers";
+  const isLookbookGrid = sectionType === "lookbook_grid";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -215,22 +235,24 @@ export function ItemFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {isHeroCarousel ? (
+        {isHeroCarousel || isLookbookGrid ? (
           <div className="grid gap-3">
             <div className="space-y-1.5">
-              <Label>Overlay Title (BEYOND)</Label>
+              <Label>{isLookbookGrid ? "Card Label (e.g. SHOP TOPWEAR)" : "Overlay Title (BEYOND)"}</Label>
               <Input
                 value={(form.title as string) ?? ""}
                 onChange={(e) => set("title", e.target.value)}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>Overlay Subtitle (ORDINARY)</Label>
-              <Input
-                value={(form.subtitle as string) ?? ""}
-                onChange={(e) => set("subtitle", e.target.value)}
-              />
-            </div>
+            {!isLookbookGrid && (
+              <div className="space-y-1.5">
+                <Label>Overlay Subtitle (ORDINARY)</Label>
+                <Input
+                  value={(form.subtitle as string) ?? ""}
+                  onChange={(e) => set("subtitle", e.target.value)}
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Image URL / Link</Label>
               <Input
@@ -282,33 +304,188 @@ export function ItemFormDialog({
               </div>
             ) : null}
           </div>
-        ) : (isNewDrop || isProductShelf) ? (
+        ) : (isCategoryGrid || isExclusiveOffers) ? (
           <div className="grid gap-3">
             <div className="space-y-1.5">
-              <Label>Reference type</Label>
-              <Select
-                value={(form.referenceType as string) ?? "PRODUCT"}
-                onValueChange={(v) => set("referenceType", v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PRODUCT">PRODUCT</SelectItem>
-                  <SelectItem value="COLLECTION">COLLECTION</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>
-                {form.referenceType === "COLLECTION" ? "Collection ID" : "Product ID"}
-              </Label>
+              <Label>Title</Label>
               <Input
-                value={(form.referenceId as string) ?? ""}
-                onChange={(e) => set("referenceId", e.target.value)}
-                placeholder={form.referenceType === "COLLECTION" ? "e.g. 44961808" : "e.g. 44961809"}
-                className="font-mono text-xs"
+                value={(form.title as string) ?? ""}
+                onChange={(e) => set("title", e.target.value)}
               />
+            </div>
+
+            <div className="grid gap-3">
+              <div className="space-y-1.5">
+                <Label>Redirect Type</Label>
+                <Select
+                  value={(form.redirectType as string) ?? "NONE"}
+                  onValueChange={(v) => set("redirectType", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">NONE</SelectItem>
+                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
+                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
+                    <SelectItem value="URL">URL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Redirect Value</Label>
+                {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
+                  <SearchableInput
+                    value={(form.redirectValue as string) ?? ""}
+                    placeholder="Search handle..."
+                    options={
+                      form.redirectType === "PRODUCT" 
+                        ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
+                        : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
+                    }
+                    onChange={(val) => {
+                      setForm(f => {
+                        const next = { ...f, redirectValue: val };
+                        if (next.redirectType === "PRODUCT") {
+                          const p = allProducts?.find(p => p.handle === val);
+                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = p.id; }
+                        } else {
+                          const c = allCollections?.find(c => c.handle === val);
+                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = c.id; }
+                        }
+                        return next;
+                      });
+                    }}
+                  />
+                ) : (
+                  <Input
+                    value={(form.redirectValue as string) ?? ""}
+                    onChange={(e) => set("redirectValue", e.target.value)}
+                    placeholder="e.g. bottoms-jeans-cargo"
+                  />
+                )}
+              </div>
+            </div>
+            <div className="grid gap-3">
+              <div className="space-y-1.5">
+                <Label>Media Type</Label>
+                <Select
+                  value={((form.metadataJson as Record<string, unknown>)?.backgroundMediaType as string) || "IMAGE"}
+                  onValueChange={(v) => {
+                    setForm((f) => ({
+                      ...f,
+                      metadataJson: {
+                        ...((f.metadataJson as Record<string, unknown>) ?? {}),
+                        backgroundMediaType: v,
+                      },
+                    }));
+                    setMetaJson((m) => ({ ...m, backgroundMediaType: v }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="IMAGE">IMAGE</SelectItem>
+                    <SelectItem value="GIF">GIF</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Media URL</Label>
+                <Input
+                  value={(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string)) ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setForm((f) => ({ 
+                      ...f, 
+                      imageUrl: val,
+                      mobileImageUrl: val,
+                      metadataJson: { 
+                        ...((f.metadataJson as Record<string, unknown>) ?? {}), 
+                        backgroundMediaValue: val,
+                      } 
+                    }));
+                    setMetaJson((m) => ({
+                      ...m,
+                      backgroundMediaValue: val,
+                    }));
+                  }}
+                  placeholder="https://…"
+                />
+              </div>
+            </div>
+            {(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string)) ? (
+              <div className="overflow-hidden rounded-md border bg-muted p-1">
+                <img
+                  src={(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string))}
+                  alt="Preview"
+                  className="h-24 w-full object-cover"
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : (isNewDrop || isProductShelf || isCategoryProductsShelf) ? (
+          <div className="grid gap-3">
+            <div className="space-y-1.5">
+              <Label>Tab Title</Label>
+              <Input
+                value={(form.title as string) ?? ""}
+                onChange={(e) => set("title", e.target.value)}
+                placeholder="e.g. Best Sellers"
+              />
+            </div>
+            <div className="grid gap-3">
+              <div className="space-y-1.5">
+                <Label>Redirect Type</Label>
+                <Select
+                  value={(form.redirectType as string) ?? "NONE"}
+                  onValueChange={(v) => set("redirectType", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">NONE</SelectItem>
+                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
+                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
+                    <SelectItem value="URL">URL</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Redirect Value</Label>
+                {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
+                  <SearchableInput
+                    value={(form.redirectValue as string) ?? ""}
+                    placeholder="Search handle..."
+                    options={
+                      form.redirectType === "PRODUCT" 
+                        ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
+                        : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
+                    }
+                    onChange={(val) => {
+                      setForm(f => {
+                        const next = { ...f, redirectValue: val };
+                        if (next.redirectType === "PRODUCT") {
+                          const p = allProducts?.find(p => p.handle === val);
+                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = p.id; }
+                        } else {
+                          const c = allCollections?.find(c => c.handle === val);
+                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = c.id; }
+                        }
+                        return next;
+                      });
+                    }}
+                  />
+                ) : (
+                  <Input
+                    value={(form.redirectValue as string) ?? ""}
+                    onChange={(e) => set("redirectValue", e.target.value)}
+                    placeholder="e.g. tops-tshirts"
+                  />
+                )}
+              </div>
             </div>
           </div>
         ) : isPromoHero ? (
@@ -322,10 +499,9 @@ export function ItemFormDialog({
             </div>
             <div className="space-y-1.5">
               <Label>Image URL / Link</Label>
-              <Input
+              <ImageUploadInput
                 value={(form.imageUrl as string) ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
+                onChange={(val) => {
                   setForm((f) => ({ ...f, imageUrl: val, mobileImageUrl: val }));
                 }}
                 placeholder="https://…"
@@ -340,33 +516,6 @@ export function ItemFormDialog({
                 />
               </div>
             ) : null}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Reference type</Label>
-                <Select
-                  value={(form.referenceType as string) ?? "NONE"}
-                  onValueChange={(v) => set("referenceType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">NONE</SelectItem>
-                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
-                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Reference ID</Label>
-                <Input
-                  value={(form.referenceId as string) ?? ""}
-                  onChange={(e) => set("referenceId", e.target.value)}
-                  placeholder="Collection or Product ID"
-                  className="font-mono text-xs"
-                />
-              </div>
-            </div>
           </div>
         ) : (
           <div className="grid gap-3">
@@ -388,57 +537,35 @@ export function ItemFormDialog({
             )}
             <div className="space-y-1.5">
               <Label>Image URL</Label>
-              <Input
+              <ImageUploadInput
                 value={(form.imageUrl as string) ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setForm((f) => ({ ...f, imageUrl: val, mobileImageUrl: val }));
+                onChange={(val) => {
+                  setForm((f) => ({
+                    ...f,
+                    imageUrl: val,
+                    mobileImageUrl: val,
+                    metadataJson: {
+                      ...(f.metadataJson ?? {}),
+                      backgroundMediaValue: val,
+                    },
+                  }));
                 }}
                 placeholder="https://…"
               />
             </div>
-            {!isProductShelf && (
-              <div className="space-y-1.5">
-                <Label>Upload image</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                      const result = reader.result;
-                      if (typeof result === "string") {
-                        setForm((f) => ({
-                          ...f,
-                          imageUrl: result,
-                          mobileImageUrl: result,
-                          metadataJson: {
-                            ...(f.metadataJson ?? {}),
-                            backgroundMediaValue: result,
-                          },
-                        }));
-                      }
-                    };
-                    reader.readAsDataURL(file);
-                  }}
+            {((form.metadataJson as JsonMap)?.backgroundMediaValue as string) ||
+            (form.imageUrl as string) ? (
+              <div className="overflow-hidden rounded-md border bg-muted p-1">
+                <img
+                  src={
+                    ((form.metadataJson as JsonMap)?.backgroundMediaValue as string) ||
+                    (form.imageUrl as string)
+                  }
+                  alt="Preview"
+                  className="h-24 w-full object-cover"
                 />
-                {((form.metadataJson as JsonMap)?.backgroundMediaValue as string) ||
-                (form.imageUrl as string) ? (
-                  <div className="overflow-hidden rounded-md border bg-muted p-1">
-                    <img
-                      src={
-                        ((form.metadataJson as JsonMap)?.backgroundMediaValue as string) ||
-                        (form.imageUrl as string)
-                      }
-                      alt="Preview"
-                      className="h-24 w-full object-cover"
-                    />
-                  </div>
-                ) : null}
               </div>
-            )}
+            ) : null}
             {(form.imageUrl as string) && isProductShelf ? (
               <div className="overflow-hidden rounded-md border bg-muted p-1">
                 <img
@@ -449,7 +576,7 @@ export function ItemFormDialog({
               </div>
             ) : null}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3">
               <div className="space-y-1.5">
                 <Label>Badge text</Label>
                 <Input
@@ -467,35 +594,7 @@ export function ItemFormDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Reference type</Label>
-                <Select
-                  value={(form.referenceType as string) ?? "NONE"}
-                  onValueChange={(v) => set("referenceType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REFERENCE_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Reference ID</Label>
-                <Input
-                  value={(form.referenceId as string) ?? ""}
-                  onChange={(e) => set("referenceId", e.target.value)}
-                  placeholder="449620410618"
-                  className="font-mono text-xs"
-                />
-              </div>
-            </div>
+
 
             {Object.keys(metaJson).length > 0 && (
               <MetadataFields

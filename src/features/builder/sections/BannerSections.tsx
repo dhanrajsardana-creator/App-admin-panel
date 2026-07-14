@@ -110,8 +110,9 @@ export function BannerSection({ section, items }: SectionRendererProps) {
   const image = bgValue || itemImage(first ?? ({} as never)) || null;
 
   if (section.sectionKey === "STYLE_SPOTLIGHT") {
-    const title = section.title || "";
-    const buttonText = str(config, "buttonText") || "VIEW ALL";
+    const title = section.title || "STRAIGHT OUTTA HOOD";
+    const subtitle = section.subtitle || "new drops";
+    const buttonText = str(config, "viewAllButtonText") || "VIEW ALL";
     const ratioStr = config.aspectRatio;
     let aspectRatio = 0.75;
     if (ratioStr && typeof ratioStr === "string" && ratioStr.includes(":")) {
@@ -123,7 +124,22 @@ export function BannerSection({ section, items }: SectionRendererProps) {
     }
 
     return (
-      <div className="bg-white pt-0 pb-3">
+      <div className="bg-white pt-6 pb-6">
+        {/* Header */}
+        <div className="mb-4 px-4 text-center">
+          <h3
+            className="text-[26px] uppercase tracking-[0.06em] text-zinc-900 font-extrabold"
+            style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
+          >
+            {title}
+          </h3>
+          {subtitle && (
+            <p className="mt-2 text-[11px] text-zinc-500 leading-relaxed max-w-[290px] mx-auto uppercase tracking-wide font-medium">
+              {subtitle}
+            </p>
+          )}
+        </div>
+
         <div
           className="relative w-full overflow-hidden bg-zinc-200 cursor-pointer"
           style={{ paddingBottom: `${(1 / aspectRatio) * 100}%` }}
@@ -136,15 +152,17 @@ export function BannerSection({ section, items }: SectionRendererProps) {
             />
           )}
         </div>
-        <div className="mt-3 flex justify-center">
-          <button
-            className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-900"
-            style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
-          >
-            {buttonText.toUpperCase()}
-            <ArrowRight className="h-4 w-4 shrink-0" />
-          </button>
-        </div>
+        {bool(config, "isViewAllButtonEnabled", true) && (
+          <div className="mt-4 border-y border-zinc-200/60 py-3.5 flex justify-center">
+            <button
+              className="flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[0.15em] text-zinc-900"
+              style={{ fontFamily: "'Bebas Neue', 'Oswald', sans-serif" }}
+            >
+              {buttonText.toUpperCase()}
+              <ArrowRight className="h-4 w-4 shrink-0" />
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -152,7 +170,7 @@ export function BannerSection({ section, items }: SectionRendererProps) {
   if (section.sectionKey === "TRENDING_SHOWCASE") {
     const title = section.title || "DROP IT LIKE IT'S HOT";
     const subtitle = section.subtitle || "The hottest styles, picked from what you love, curated into fresh collections for your vibe.";
-    const gridImageUrl = image || "/figma-home/07-banner-a.png";
+    const gridImageUrl = str(config, "backgroundMediaValue") || image || "/figma-home/07-banner-a.png";
     return (
       <div
         className="py-6"
@@ -184,11 +202,13 @@ export function BannerSection({ section, items }: SectionRendererProps) {
         </div>
 
         {/* View All Button */}
-        <div className="mt-4 border-y border-zinc-200/60 py-3.5">
-          <button className="flex w-full items-center justify-center gap-1.5 text-[10px] font-bold tracking-[0.15em] text-zinc-800 uppercase">
-            {str(config, "buttonText") || "VIEW ALL"} →
-          </button>
-        </div>
+        {bool(config, "isViewAllButtonEnabled", true) && (
+          <div className="mt-4 border-y border-zinc-200/60 py-3.5">
+            <button className="flex w-full items-center justify-center gap-1.5 text-[10px] font-bold tracking-[0.15em] text-zinc-800 uppercase">
+              {str(config, "viewAllButtonText") || "VIEW ALL"} →
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -289,11 +309,13 @@ export function BannerSection({ section, items }: SectionRendererProps) {
         </div>
 
         {/* View All */}
-        <div className="flex justify-center py-4 border-t border-zinc-200/50">
-          <button className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-zinc-800">
-            VIEW ALL →
-          </button>
-        </div>
+        {bool(config, "isViewAllButtonEnabled", true) && (
+          <div className="flex justify-center py-4 border-t border-zinc-200/50">
+            <button className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-zinc-800">
+              {str(config, "viewAllButtonText") || "VIEW ALL"} →
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -340,7 +362,7 @@ export function HeroCarouselSection({ section, items }: SectionRendererProps) {
 
   const overlayingTitle  = str(config, "overlayingTitle");
   const viewAllText      = str(config, "viewAllButtonText") || "Shop Now";
-  const showViewAll      = !!str(config, "viewAllButtonText") || !!str(config, "viewAllValue");
+  const showViewAll      = bool(config, "isViewAllButtonEnabled", true);
 
   const slides = items.length > 0 ? items : [null];
 
