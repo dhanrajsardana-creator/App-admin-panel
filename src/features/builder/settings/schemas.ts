@@ -267,12 +267,14 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   },
   input_field: {
     fields: [
-      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "searchBoxFixedPlaceholder", label: "Search box fixed prefix", placeholder: "Search for", group: "content" },
+      { kind: "tags", key: "searchBoxRotationalPlaceholders", label: "Search box rotating placeholders", placeholder: "e.g. T-shirts, Jackets… (Enter to add)", group: "content" },
     ],
   },
   badges: {
     fields: [
       { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "tags", key: "exampleData", label: "Example Data (Searches)", placeholder: "e.g. Brown Korean Pant, Denim... (Enter to add)", group: "content" },
     ],
   },
   carousel: {
