@@ -31,6 +31,9 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { Spinner } from "@/components/common/Spinner";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { qk } from "@/hooks/queryKeys";
+import { usePages } from "@/hooks/usePages";
 import { getSectionDef, sectionLabel } from "@/config/sectionCatalog";
 import { useBuilderStore } from "@/store/builderStore";
 import {
@@ -38,6 +41,7 @@ import {
   useReorderSections,
   useSections,
   useUpdateSection,
+  usePatchSectionCache,
 } from "@/hooks/useSections";
 import { useItems } from "@/hooks/useItems";
 import { useShopifyResolver, type ResolvedRef } from "@/hooks/useShopify";
@@ -100,6 +104,7 @@ function SortableSectionRow({
   onSelect,
   onToggleVisible,
   onDelete,
+  isPdp,
 }: {
   section: Section;
   selected: boolean;
@@ -108,6 +113,7 @@ function SortableSectionRow({
   onSelect: () => void;
   onToggleVisible: () => void;
   onDelete: () => void;
+  isPdp?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id });
@@ -168,13 +174,15 @@ function SortableSectionRow({
             <EyeOff className="h-4 w-4" />
           )}
         </button>
-        <button
-          onClick={onDelete}
-          className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-          title="Delete section"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {!isPdp && (
+          <button
+            onClick={onDelete}
+            className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+            title="Delete section"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {shopifyEnabled && <SectionRefs sectionId={section.id} resolve={resolve} />}
@@ -186,6 +194,14 @@ export function SectionList({ pageId }: { pageId: string }) {
   const { data: sections, isLoading } = useSections(pageId);
   const selectedSectionId = useBuilderStore((s) => s.selectedSectionId);
   const selectSection = useBuilderStore((s) => s.selectSection);
+  const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
+
+  const { data: pages } = usePages();
+  const page = pages?.find((p) => p.id === pageId) ?? null;
+  const isPdp = page?.pageType === "PRODUCT";
+
+  const qc = useQueryClient();
+  const patchCache = usePatchSectionCache(pageId);
 
   const reorder = useReorderSections(pageId);
   const updateSection = useUpdateSection(pageId);
@@ -216,7 +232,18 @@ export function SectionList({ pageId }: { pageId: string }) {
     const newIndex = localOrder.findIndex((s) => s.id === over.id);
     const next = arrayMove(localOrder, oldIndex, newIndex);
     setLocalOrder(next);
-    reorder.mutate(next);
+
+    if (isPdp) {
+      // Optimistically update the react-query cache with new sortOrders
+      const nextWithSort = next.map((s, i) => ({ ...s, sortOrder: i }));
+      qc.setQueryData<Section[]>(qk.sections(pageId), nextWithSort);
+      // Queue sortOrder edits in the builderStore
+      nextWithSort.forEach((s) => {
+        queueSectionEdit(s.id, { sortOrder: s.sortOrder });
+      });
+    } else {
+      reorder.mutate(next);
+    }
   };
 
   return (
@@ -225,14 +252,16 @@ export function SectionList({ pageId }: { pageId: string }) {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Sections {localOrder.length > 0 && `(${localOrder.length})`}
         </h3>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          onClick={() => setAddOpen(true)}
-          title="Add section"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        {!isPdp && (
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => setAddOpen(true)}
+            title="Add section"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <div className="min-h-0 flex-1 space-y-1 overflow-y-auto scrollbar-thin pr-1">
@@ -243,14 +272,16 @@ export function SectionList({ pageId }: { pageId: string }) {
         ) : localOrder.length === 0 ? (
           <div className="rounded-lg border border-dashed p-6 text-center">
             <p className="text-sm text-muted-foreground">No sections yet.</p>
-            <Button
-              size="sm"
-              variant="outline"
-              className="mt-3"
-              onClick={() => setAddOpen(true)}
-            >
-              <Plus className="h-4 w-4" /> Add your first section
-            </Button>
+            {!isPdp && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3"
+                onClick={() => setAddOpen(true)}
+              >
+                <Plus className="h-4 w-4" /> Add your first section
+              </Button>
+            )}
           </div>
         ) : (
           <DndContext
@@ -271,13 +302,20 @@ export function SectionList({ pageId }: { pageId: string }) {
                   shopifyEnabled={shopifyEnabled}
                   resolve={resolve}
                   onSelect={() => selectSection(section.id)}
-                  onToggleVisible={() =>
-                    updateSection.mutate({
-                      id: section.id,
-                      payload: { isVisible: !section.isVisible },
-                    })
-                  }
+                  onToggleVisible={() => {
+                    if (isPdp) {
+                      const nextVisible = !section.isVisible;
+                      patchCache(section.id, { isVisible: nextVisible });
+                      queueSectionEdit(section.id, { isVisible: nextVisible });
+                    } else {
+                      updateSection.mutate({
+                        id: section.id,
+                        payload: { isVisible: !section.isVisible },
+                      });
+                    }
+                  }}
                   onDelete={() => setPendingDelete(section)}
+                  isPdp={isPdp}
                 />
               ))}
             </SortableContext>
@@ -285,14 +323,16 @@ export function SectionList({ pageId }: { pageId: string }) {
         )}
       </div>
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="mt-2 w-full"
-        onClick={() => setAddOpen(true)}
-      >
-        <Plus className="h-4 w-4" /> Add Section
-      </Button>
+      {!isPdp && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-2 w-full"
+          onClick={() => setAddOpen(true)}
+        >
+          <Plus className="h-4 w-4" /> Add Section
+        </Button>
+      )}
 
       <AddSectionDialog
         open={addOpen}
