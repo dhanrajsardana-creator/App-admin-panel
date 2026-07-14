@@ -31,12 +31,20 @@ export function usePatchItemCache(sectionId: string | null) {
 
 export function useCreateItem(sectionId: string | null) {
   const qc = useQueryClient();
+  const queueItemAction = useBuilderStore((s) => s.queueItemAction);
   return useMutation({
-    mutationFn: (payload: UpdateItemPayload) =>
-      itemsApi.create(sectionId as string, payload),
+    mutationFn: async (payload: UpdateItemPayload) => {
+      if (!sectionId) throw new Error("No section ID");
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      queueItemAction({ type: 'CREATE', sectionId, tempId, payload });
+      qc.setQueryData<SectionItem[]>(qk.items(sectionId), (prev) => [
+        ...(prev ?? []),
+        { id: tempId, sectionId, ...payload } as unknown as SectionItem,
+      ]);
+      return { id: tempId }; // Mock return since mutation success expects data sometimes
+    },
     onSuccess: () => {
-      if (sectionId) qc.invalidateQueries({ queryKey: qk.items(sectionId) });
-      toast.success("Item added");
+      toast.success("Item added locally (Publish to save)");
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to add item"),
@@ -45,16 +53,19 @@ export function useCreateItem(sectionId: string | null) {
 
 export function useUpdateItem(sectionId: string | null) {
   const qc = useQueryClient();
-  const beginSave = useBuilderStore((s) => s.beginSave);
-  const endSave = useBuilderStore((s) => s.endSave);
+  const queueItemAction = useBuilderStore((s) => s.queueItemAction);
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateItemPayload }) => {
-      beginSave();
-      return itemsApi.update(id, payload);
+    mutationFn: async ({ id, payload }: { id: string; payload: UpdateItemPayload }) => {
+      if (!sectionId) throw new Error("No section ID");
+      queueItemAction({ type: 'UPDATE', sectionId, itemId: id, payload });
+      qc.setQueryData<SectionItem[]>(qk.items(sectionId), (prev) =>
+        (prev ?? []).map((it) =>
+          it.id === id ? ({ ...it, ...payload } as SectionItem) : it
+        )
+      );
     },
-    onSettled: () => {
-      endSave();
-      if (sectionId) qc.invalidateQueries({ queryKey: qk.items(sectionId) });
+    onSuccess: () => {
+      toast.success("Item updated locally (Publish to save)");
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to save item"),
@@ -63,13 +74,19 @@ export function useUpdateItem(sectionId: string | null) {
 
 export function useDeleteItem(sectionId: string | null) {
   const qc = useQueryClient();
+  const queueItemAction = useBuilderStore((s) => s.queueItemAction);
   const selectItem = useBuilderStore((s) => s.selectItem);
   return useMutation({
-    mutationFn: (id: string) => itemsApi.remove(id),
+    mutationFn: async (id: string) => {
+      if (!sectionId) throw new Error("No section ID");
+      queueItemAction({ type: 'DELETE', sectionId, itemId: id });
+      qc.setQueryData<SectionItem[]>(qk.items(sectionId), (prev) =>
+        (prev ?? []).filter((it) => it.id !== id)
+      );
+    },
     onSuccess: () => {
-      if (sectionId) qc.invalidateQueries({ queryKey: qk.items(sectionId) });
       selectItem(null);
-      toast.success("Item deleted");
+      toast.success("Item deleted locally (Publish to save)");
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to delete item"),
@@ -78,26 +95,23 @@ export function useDeleteItem(sectionId: string | null) {
 
 export function useReorderItems(sectionId: string | null) {
   const qc = useQueryClient();
+  const queueItemAction = useBuilderStore((s) => s.queueItemAction);
   return useMutation({
     mutationFn: async (ordered: SectionItem[]) => {
-      await itemsApi.reorder(ordered.map((it, i) => ({ id: it.id, sortOrder: i })));
-    },
-    onMutate: async (ordered: SectionItem[]) => {
-      if (!sectionId) return;
-      await qc.cancelQueries({ queryKey: qk.items(sectionId) });
-      const prev = qc.getQueryData<SectionItem[]>(qk.items(sectionId));
+      if (!sectionId) throw new Error("No section ID");
+      const mapped = ordered.map((it, i) => ({ id: it.id, sortOrder: i }));
+      queueItemAction({ type: 'REORDER', sectionId, ordered: mapped });
+      
       qc.setQueryData<SectionItem[]>(
         qk.items(sectionId),
         ordered.map((it, i) => ({ ...it, sortOrder: i }))
       );
-      return { prev };
     },
-    onError: (_e, _v, ctx) => {
-      if (sectionId && ctx?.prev) qc.setQueryData(qk.items(sectionId), ctx.prev);
+    onSuccess: () => {
+      // toast.success("Items reordered locally"); // Optional, might be noisy
+    },
+    onError: () => {
       toast.error("Failed to reorder items");
-    },
-    onSettled: () => {
-      if (sectionId) qc.invalidateQueries({ queryKey: qk.items(sectionId) });
     },
   });
 }

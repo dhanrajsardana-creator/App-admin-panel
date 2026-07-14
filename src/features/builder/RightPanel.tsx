@@ -103,7 +103,7 @@ export function RightPanel() {
             <TabsTrigger value="style">
               <Paintbrush /> Style
             </TabsTrigger>
-            {section.sectionType !== "exlusive_offers" && (
+            {section.sectionType !== "exlusive_offers" && section.sectionType !== "collection_with_products" && (
               <TabsTrigger value="items">
                 <Layers /> Items
               </TabsTrigger>
@@ -139,22 +139,6 @@ export function RightPanel() {
               <Switch
                 checked={section.isVisible}
                 onCheckedChange={(v) => patchField({ isVisible: v })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between rounded-md border px-3 py-2">
-              <Label className="text-sm text-foreground">Dark mode</Label>
-              <Switch
-                checked={config.theme === "dark" || !!config.isDark}
-                onCheckedChange={(v) => {
-                  const nextConfig = {
-                    ...(section.configJson ?? {}),
-                    theme: v ? "dark" : "light",
-                    isDark: v,
-                  };
-                  patchCache(section.id, { configJson: nextConfig });
-                  queueSectionEdit(section.id, { configJson: nextConfig });
-                }}
               />
             </div>
 

@@ -16,6 +16,10 @@ import { bool, num, str } from "@/utils/json";
 import type { JsonMap } from "@/types";
 import type { FieldDef } from "./fieldTypes";
 
+import { ImageUploadInput } from "@/components/common/ImageUploadInput";
+import { SearchableInput } from "@/components/common/SearchableInput";
+import { useShopifyProducts, useShopifyCollections } from "@/hooks/useShopify";
+
 interface FieldControlProps {
   field: FieldDef;
   config: JsonMap;
@@ -23,18 +27,34 @@ interface FieldControlProps {
 }
 
 export function FieldControl({ field, config, onChange }: FieldControlProps) {
+  const { data: allProducts } = useShopifyProducts();
+  const { data: allCollections } = useShopifyCollections();
+
   switch (field.kind) {
-    case "text":
+    case "text": {
+      const isMedia = 
+        field.key.toLowerCase().includes("image") || 
+        field.key.toLowerCase().includes("media");
+
       return (
         <div className="space-y-1.5">
           <Label>{field.label}</Label>
-          <Input
-            value={str(config, field.key) || field.placeholder || ""}
-            placeholder={field.placeholder}
-            onChange={(e) => onChange(field.key, e.target.value)}
-          />
+          {isMedia ? (
+            <ImageUploadInput
+              value={str(config, field.key) || ""}
+              placeholder={field.placeholder}
+              onChange={(val) => onChange(field.key, val)}
+            />
+          ) : (
+            <Input
+              value={str(config, field.key) || field.placeholder || ""}
+              placeholder={field.placeholder}
+              onChange={(e) => onChange(field.key, e.target.value)}
+            />
+          )}
         </div>
       );
+    }
 
     case "textarea":
       return (
@@ -130,6 +150,86 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
         </div>
       );
 
+    case "tuple_text": {
+      const raw = config[field.key];
+      const arr = Array.isArray(raw) ? raw.map(String) : ["", ""];
+      
+      return (
+        <div className="grid gap-3">
+          <div className="space-y-1.5">
+            <Label>{field.label1}</Label>
+            <Input
+              value={arr[0] || ""}
+              placeholder={field.placeholder1}
+              onChange={(e) => {
+                const next = [...arr];
+                next[0] = e.target.value;
+                onChange(field.key, next);
+              }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{field.label2}</Label>
+            <Input
+              value={arr[1] || ""}
+              placeholder={field.placeholder2}
+              onChange={(e) => {
+                const next = [...arr];
+                next[1] = e.target.value;
+                onChange(field.key, next);
+              }}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    case "tuple3_text": {
+      const raw = config[field.key];
+      const arr = Array.isArray(raw) ? raw.map(String) : ["", "", ""];
+      
+      return (
+        <div className="grid gap-3">
+          <div className="space-y-1.5">
+            <Label>{field.label1}</Label>
+            <Input
+              value={arr[0] || ""}
+              placeholder={field.placeholder1}
+              onChange={(e) => {
+                const next = [...arr];
+                next[0] = e.target.value;
+                onChange(field.key, next);
+              }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{field.label2}</Label>
+            <Input
+              value={arr[1] || ""}
+              placeholder={field.placeholder2}
+              onChange={(e) => {
+                const next = [...arr];
+                next[1] = e.target.value;
+                onChange(field.key, next);
+              }}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{field.label3}</Label>
+            <Input
+              value={arr[2] || ""}
+              placeholder={field.placeholder3}
+              onChange={(e) => {
+                const next = [...arr];
+                next[2] = e.target.value;
+                onChange(field.key, next);
+              }}
+            />
+          </div>
+        </div>
+      );
+    }
+
     case "tags": {
       // Read current value as string[]
       const raw = config[field.key];
@@ -147,21 +247,23 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
     case "media_url":
       return (
         <div className="grid gap-3">
-          <div className="space-y-1.5">
-            <Label>Media Type</Label>
-            <Select
-              value={str(config, field.typeKey) || "IMAGE"}
-              onValueChange={(v) => onChange(field.typeKey, v)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="IMAGE">IMAGE</SelectItem>
-                <SelectItem value="GIF">GIF</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {field.typeKey && (
+            <div className="space-y-1.5">
+              <Label>Media Type</Label>
+              <Select
+                value={str(config, field.typeKey) || "IMAGE"}
+                onValueChange={(v) => onChange(field.typeKey!, v)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IMAGE">IMAGE</SelectItem>
+                  <SelectItem value="GIF">GIF</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>{field.label}</Label>
             <Input
@@ -172,6 +274,48 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
           </div>
         </div>
       );
+
+    case "redirect_value": {
+      const redirectType = String(config[field.typeKey] || "NONE");
+      if (redirectType === "PRODUCT" || redirectType === "COLLECTION") {
+        return (
+          <div className="space-y-1.5">
+            <Label>{field.label}</Label>
+            <SearchableInput
+              value={str(config, field.key) || ""}
+              placeholder={`Search ${redirectType.toLowerCase()} handle...`}
+              options={
+                redirectType === "PRODUCT"
+                  ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
+                  : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
+              }
+              onChange={(val) => {
+                onChange(field.key, val);
+                // Also update the resource ID if we can find it
+                if (redirectType === "PRODUCT") {
+                  const p = allProducts?.find(p => p.handle === val);
+                  if (p) onChange("viewAllRedirectId", p.id); // Or a generic way to handle ID
+                } else if (redirectType === "COLLECTION") {
+                  const c = allCollections?.find(c => c.handle === val);
+                  if (c) onChange("viewAllRedirectId", c.id);
+                }
+              }}
+            />
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-1.5">
+          <Label>{field.label}</Label>
+          <Input
+            value={str(config, field.key) || ""}
+            placeholder={field.placeholder || "https://..."}
+            onChange={(e) => onChange(field.key, e.target.value)}
+          />
+        </div>
+      );
+    }
 
     default:
       return null;

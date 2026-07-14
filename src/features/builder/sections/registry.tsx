@@ -51,6 +51,7 @@ const REGISTRY: Record<string, Renderer> = {
 
   // Product family
   product_shelf: ProductShelfSection,
+  category_products_shelf: ProductShelfSection,
   collection_carousel: CollectionCarouselSection,
   collection_with_products: CategoryShowcaseSection,
 

@@ -6,6 +6,7 @@ import {
 import { toast } from "sonner";
 import { pagesApi } from "@/api/pages";
 import { sectionsApi } from "@/api/sections";
+import { itemsApi } from "@/api/items";
 import { qk } from "./queryKeys";
 import { useBuilderStore } from "@/store/builderStore";
 import type { CreatePagePayload, Page, UpdatePagePayload } from "@/types";
@@ -68,6 +69,7 @@ export function useDeletePage() {
 export function usePublishPage() {
   const qc = useQueryClient();
   const flushPendingEdits = useBuilderStore((s) => s.flushPendingEdits);
+  const flushPendingItemActions = useBuilderStore((s) => s.flushPendingItemActions);
 
   return useMutation({
     mutationFn: async (page: Page) => {
@@ -80,7 +82,32 @@ export function usePublishPage() {
         );
       }
 
-      // ── 2. Publish the page ───────────────────────────────────────────────
+      // ── 2. Flush pending item actions sequentially ───────────────────────
+      const itemActions = flushPendingItemActions();
+      if (itemActions.length > 0) {
+        const idMap = new Map<string, string>(); // Maps temp IDs to real IDs
+        
+        for (const action of itemActions) {
+          if (action.type === 'CREATE') {
+            const created = await itemsApi.create(action.sectionId, action.payload);
+            idMap.set(action.tempId, created.id);
+          } else if (action.type === 'UPDATE') {
+            const realId = idMap.get(action.itemId) || action.itemId;
+            await itemsApi.update(realId, action.payload);
+          } else if (action.type === 'DELETE') {
+            const realId = idMap.get(action.itemId) || action.itemId;
+            await itemsApi.remove(realId);
+          } else if (action.type === 'REORDER') {
+            const mappedOrdered = action.ordered.map(o => ({
+              id: idMap.get(o.id) || o.id,
+              sortOrder: o.sortOrder
+            }));
+            await itemsApi.reorder(mappedOrdered);
+          }
+        }
+      }
+
+      // ── 3. Publish the page ───────────────────────────────────────────────
       return pagesApi.publish(page.id);
     },
     onSuccess: (page) => {

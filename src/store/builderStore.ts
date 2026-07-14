@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import type { UpdateSectionPayload } from "@/types";
+import type { UpdateSectionPayload, UpdateItemPayload } from "@/types";
+
+export type PendingItemAction = 
+  | { type: 'CREATE'; sectionId: string; tempId: string; payload: UpdateItemPayload }
+  | { type: 'UPDATE'; sectionId: string; itemId: string; payload: UpdateItemPayload }
+  | { type: 'DELETE'; sectionId: string; itemId: string }
+  | { type: 'REORDER'; sectionId: string; ordered: { id: string; sortOrder: number }[] };
 
 export type PreviewSource = "draft" | "mobile";
 
@@ -76,6 +82,11 @@ interface BuilderState {
    */
   flushPendingEdits: () => Array<{ id: string; payload: UpdateSectionPayload }>;
 
+  // --- Item Actions ------------------------------------------------------
+  pendingItemActions: PendingItemAction[];
+  queueItemAction: (action: PendingItemAction) => void;
+  flushPendingItemActions: () => PendingItemAction[];
+
   // Kept for backwards-compat with any code that still calls these — now no-ops.
   beginSave: () => void;
   endSave: () => void;
@@ -94,6 +105,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   pageSearch: "",
   previewSource: "draft",
   pendingEdits: {},
+  pendingItemActions: [],
   // backwards-compat stubs
   savingCount: 0,
   lastSavedAt: null,
@@ -110,6 +122,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       appScreen: null,
       // Discard unsaved edits when switching pages.
       pendingEdits: {},
+      pendingItemActions: [],
     }),
 
   selectSection: (sectionId) =>
@@ -173,12 +186,23 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       },
     })),
 
-  hasPendingEdits: () => Object.keys(get().pendingEdits).length > 0,
+  queueItemAction: (action) =>
+    set((st) => ({
+      pendingItemActions: [...st.pendingItemActions, action],
+    })),
+
+  hasPendingEdits: () => Object.keys(get().pendingEdits).length > 0 || get().pendingItemActions.length > 0,
 
   flushPendingEdits: () => {
     const edits = get().pendingEdits;
     set({ pendingEdits: {} });
     return Object.entries(edits).map(([id, payload]) => ({ id, payload }));
+  },
+
+  flushPendingItemActions: () => {
+    const actions = get().pendingItemActions;
+    set({ pendingItemActions: [] });
+    return actions;
   },
 
   // No-op stubs kept for backwards compat
