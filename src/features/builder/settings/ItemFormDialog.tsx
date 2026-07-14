@@ -224,6 +224,7 @@ export function ItemFormDialog({
   const isCategoryGrid = sectionType === "category_grid";
   const isExclusiveOffers = sectionType === "exlusive_offers";
   const isLookbookGrid = sectionType === "lookbook_grid";
+  const isList = sectionType === "LIST" || sectionType === "list";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -304,7 +305,7 @@ export function ItemFormDialog({
               </div>
             ) : null}
           </div>
-        ) : (isCategoryGrid || isExclusiveOffers) ? (
+        ) : (isCategoryGrid || isExclusiveOffers || isList) ? (
           <div className="grid gap-3">
             <div className="space-y-1.5">
               <Label>Title</Label>
@@ -366,64 +367,68 @@ export function ItemFormDialog({
                 )}
               </div>
             </div>
-            <div className="grid gap-3">
-              <div className="space-y-1.5">
-                <Label>Media Type</Label>
-                <Select
-                  value={((form.metadataJson as Record<string, unknown>)?.backgroundMediaType as string) || "IMAGE"}
-                  onValueChange={(v) => {
-                    setForm((f) => ({
-                      ...f,
-                      metadataJson: {
-                        ...((f.metadataJson as Record<string, unknown>) ?? {}),
-                        backgroundMediaType: v,
-                      },
-                    }));
-                    setMetaJson((m) => ({ ...m, backgroundMediaType: v }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="IMAGE">IMAGE</SelectItem>
-                    <SelectItem value="GIF">GIF</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Media URL</Label>
-                <Input
-                  value={(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string)) ?? ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setForm((f) => ({ 
-                      ...f, 
-                      imageUrl: val,
-                      mobileImageUrl: val,
-                      metadataJson: { 
-                        ...((f.metadataJson as Record<string, unknown>) ?? {}), 
-                        backgroundMediaValue: val,
-                      } 
-                    }));
-                    setMetaJson((m) => ({
-                      ...m,
-                      backgroundMediaValue: val,
-                    }));
-                  }}
-                  placeholder="https://…"
-                />
-              </div>
-            </div>
-            {(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string)) ? (
-              <div className="overflow-hidden rounded-md border bg-muted p-1">
-                <img
-                  src={(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string))}
-                  alt="Preview"
-                  className="h-24 w-full object-cover"
-                />
-              </div>
-            ) : null}
+            {!isList && (
+              <>
+                <div className="grid gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Media Type</Label>
+                    <Select
+                      value={((form.metadataJson as Record<string, unknown>)?.backgroundMediaType as string) || "IMAGE"}
+                      onValueChange={(v) => {
+                        setForm((f) => ({
+                          ...f,
+                          metadataJson: {
+                            ...((f.metadataJson as Record<string, unknown>) ?? {}),
+                            backgroundMediaType: v,
+                          },
+                        }));
+                        setMetaJson((m) => ({ ...m, backgroundMediaType: v }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IMAGE">IMAGE</SelectItem>
+                        <SelectItem value="GIF">GIF</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Media URL</Label>
+                    <Input
+                      value={(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string)) ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setForm((f) => ({ 
+                          ...f, 
+                          imageUrl: val,
+                          mobileImageUrl: val,
+                          metadataJson: { 
+                            ...((f.metadataJson as Record<string, unknown>) ?? {}), 
+                            backgroundMediaValue: val,
+                          } 
+                        }));
+                        setMetaJson((m) => ({
+                          ...m,
+                          backgroundMediaValue: val,
+                        }));
+                      }}
+                      placeholder="https://…"
+                    />
+                  </div>
+                </div>
+                {(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string)) ? (
+                  <div className="overflow-hidden rounded-md border bg-muted p-1">
+                    <img
+                      src={(((form.metadataJson as Record<string, unknown>)?.backgroundMediaValue as string) || (form.imageUrl as string))}
+                      alt="Preview"
+                      className="h-24 w-full object-cover"
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         ) : (isNewDrop || isProductShelf || isCategoryProductsShelf) ? (
           <div className="grid gap-3">

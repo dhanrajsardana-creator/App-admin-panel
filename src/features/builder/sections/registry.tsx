@@ -28,6 +28,12 @@ import {
   ServicesSection,
 } from "./TextSections";
 import { FallbackSection } from "./FallbackSection";
+import {
+  SearchInputSection,
+  RecentSearchesSection,
+  SearchHomeCarouselSection,
+  ListSection,
+} from "./SearchHomeSections";
 
 type Renderer = ComponentType<SectionRendererProps>;
 
@@ -64,6 +70,12 @@ const REGISTRY: Record<string, Renderer> = {
   search_bar: SearchBarSection,
   rich_text: RichTextSection,
   services_information: ServicesSection,
+
+  // Search Home family
+  input_field: SearchInputSection,
+  badges: RecentSearchesSection,
+  carousel: SearchHomeCarouselSection,
+  list: ListSection,
 };
 
 export function getSectionRenderer(sectionType: string): Renderer {

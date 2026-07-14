@@ -36,7 +36,7 @@ export function CenterPreview() {
   const mobile = useMobilePreview(page?.pageKey ?? null, isMobileMode);
 
   // PRODUCT-type pages preview as a real product detail page (Storefront data).
-  const isPdp = page?.pageType === "PRODUCT" && ENV.shopifyEnabled;
+  const isPdp = page?.pageType === "PRODUCT" && ENV.shopifyEnabled && page?.pageKey !== "SEARCH_HOME";
   const products = useShopifyProducts();
 
   // Scroll selected section into view inside the mobile preview frame

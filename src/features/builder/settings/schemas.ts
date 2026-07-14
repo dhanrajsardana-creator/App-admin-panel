@@ -260,6 +260,27 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   },
 
   services_information: { fields: [] },
+
+  list: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+    ],
+  },
+  input_field: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+    ],
+  },
+  badges: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+    ],
+  },
+  carousel: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+    ],
+  },
 };
 
 export function getSectionSchema(sectionType: string, sectionKey?: string): SectionSchema {
