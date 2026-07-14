@@ -5,8 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { useBuilderStore } from "@/store/builderStore";
 import { useSections, usePatchSectionCache, useDeleteSection } from "@/hooks/useSections";
+import { usePages } from "@/hooks/usePages";
+import { useBuilderStore } from "@/store/builderStore";
 import { sectionLabel } from "@/config/sectionCatalog";
 import { getSectionSchema } from "./settings/schemas";
 import { FieldControl } from "./settings/FieldControl";
@@ -19,6 +20,10 @@ export function RightPanel() {
   const selectedSectionId = useBuilderStore((s) => s.selectedSectionId);
   const selectSection = useBuilderStore((s) => s.selectSection);
   const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
+
+  const { data: pages } = usePages();
+  const page = pages?.find((p) => p.id === selectedPageId) ?? null;
+  const isPdp = page?.pageType === "PRODUCT";
 
   const { data: sections } = useSections(selectedPageId);
   const section = sections?.find((s) => s.id === selectedSectionId) ?? null;
@@ -65,6 +70,40 @@ export function RightPanel() {
         <p className="text-xs text-muted-foreground/70">
           Select a section in the preview or sidebar to edit its settings.
         </p>
+      </aside>
+    );
+  }
+
+  if (isPdp) {
+    return (
+      <aside className="flex w-80 shrink-0 flex-col border-l bg-card">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="min-w-0">
+            <h2 className="truncate text-sm font-semibold">
+              {section.title || sectionLabel(section.sectionType)}
+            </h2>
+            <p className="text-[11px] text-muted-foreground">
+              {sectionLabel(section.sectionType)}
+            </p>
+          </div>
+          <button
+            onClick={() => selectSection(null)}
+            className="text-lg leading-none text-muted-foreground hover:text-foreground"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
+          <div className="flex items-center justify-between rounded-md border px-3 py-2">
+            <Label className="text-sm font-medium text-foreground">Visible</Label>
+            <Switch
+              checked={section.isVisible}
+              onCheckedChange={(v) => patchField({ isVisible: v })}
+            />
+          </div>
+        </div>
       </aside>
     );
   }
