@@ -23,7 +23,7 @@ export function RightPanel() {
 
   const { data: pages } = usePages();
   const page = pages?.find((p) => p.id === selectedPageId) ?? null;
-  const isPdp = page?.pageType === "PRODUCT";
+  const isPdp = page?.pageType === "PRODUCT" && page?.pageKey !== "SEARCH_HOME";
 
   const { data: sections } = useSections(selectedPageId);
   const section = sections?.find((s) => s.id === selectedSectionId) ?? null;

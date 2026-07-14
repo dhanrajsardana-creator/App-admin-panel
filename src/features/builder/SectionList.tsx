@@ -198,7 +198,7 @@ export function SectionList({ pageId }: { pageId: string }) {
 
   const { data: pages } = usePages();
   const page = pages?.find((p) => p.id === pageId) ?? null;
-  const isPdp = page?.pageType === "PRODUCT";
+  const isPdp = page?.pageType === "PRODUCT" && page?.pageKey !== "SEARCH_HOME";
 
   const qc = useQueryClient();
   const patchCache = usePatchSectionCache(pageId);
