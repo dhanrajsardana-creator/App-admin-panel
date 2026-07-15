@@ -337,20 +337,30 @@ export function LeftSidebar() {
 
   const allPages = useMemo(() => (pages ?? []).filter(matches), [pages, q]);
 
+  const resolvePageGroupType = (p: Page): PageType => {
+    const key = p.pageKey.toUpperCase();
+    if (key.includes("HOME")) return "HOME";
+    if (key.includes("COLLECTION")) return "COLLECTION";
+    if (key.includes("PRODUCT") || key === "SEARCH_HOME") return "PRODUCT";
+    if (key.includes("CART")) return "CART";
+    if (key.includes("ACCOUNT")) return "ACCOUNT";
+    return p.pageType;
+  };
+
   // Group pages: one bucket per system slot, plus Custom and Others.
   const { slots, customPages, otherPages } = useMemo(() => {
     const systemTypes = new Set<PageType>(SYSTEM_PAGES.map((s) => s.pageType));
     const slots = SYSTEM_PAGES.map((slot) => ({
       ...slot,
-      pages: allPages.filter((p) => p.pageType === slot.pageType),
+      pages: allPages.filter((p) => resolvePageGroupType(p) === slot.pageType),
     }));
     const customPages = allPages.filter((p) =>
-      CUSTOM_PAGE_TYPES.includes(p.pageType)
+      CUSTOM_PAGE_TYPES.includes(resolvePageGroupType(p))
     );
-    const otherPages = allPages.filter(
-      (p) =>
-        !systemTypes.has(p.pageType) && !CUSTOM_PAGE_TYPES.includes(p.pageType)
-    );
+    const otherPages = allPages.filter((p) => {
+      const resolvedType = resolvePageGroupType(p);
+      return !systemTypes.has(resolvedType) && !CUSTOM_PAGE_TYPES.includes(resolvedType);
+    });
     return { slots, customPages, otherPages };
   }, [allPages]);
 

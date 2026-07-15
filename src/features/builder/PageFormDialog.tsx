@@ -12,36 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Spinner } from "@/components/common/Spinner";
 import { useCreatePage, useUpdatePage } from "@/hooks/usePages";
-import type { Page, PageStatus, PageType, Platform } from "@/types";
-
-const PAGE_TYPES: PageType[] = [
-  "HOME",
-  "COLLECTION",
-  "PRODUCT",
-  "CART",
-  "ACCOUNT",
-  "LANDING",
-  "CUSTOM",
-];
-const PLATFORMS: Platform[] = ["MOBILE", "WEB", "BOTH"];
-const STATUSES: PageStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+import type { Page, PageType } from "@/types";
 
 interface FormValues {
   name: string;
   slug: string;
   pageKey: string;
-  platform: Platform;
-  pageType: PageType;
-  status: PageStatus;
   title: string;
   description: string;
 }
@@ -52,7 +30,7 @@ interface PageFormDialogProps {
   /** When provided, the dialog edits this page; otherwise it creates. */
   page?: Page | null;
   /** Pre-fill the pageType when creating from a system-page slot. */
-  defaultPageType?: PageType;
+  defaultPageType?: any;
   onCreated?: (page: Page) => void;
 }
 
@@ -67,7 +45,6 @@ export function PageFormDialog({
   open,
   onOpenChange,
   page,
-  defaultPageType,
   onCreated,
 }: PageFormDialogProps) {
   const isEdit = !!page;
@@ -79,9 +56,6 @@ export function PageFormDialog({
       name: "",
       slug: "",
       pageKey: "",
-      platform: "MOBILE",
-      pageType: defaultPageType ?? "HOME",
-      status: "DRAFT",
       title: "",
       description: "",
     },
@@ -93,22 +67,42 @@ export function PageFormDialog({
       name: page?.name ?? "",
       slug: page?.slug ?? "",
       pageKey: page?.pageKey ?? "",
-      platform: page?.platform ?? "MOBILE",
-      pageType: page?.pageType ?? defaultPageType ?? "HOME",
-      status: page?.status ?? "DRAFT",
       title: page?.title ?? "",
       description: page?.description ?? "",
     });
-  }, [open, page, defaultPageType, reset]);
+  }, [open, page, reset]);
+
+  const getPageTypeFromKey = (key: string): PageType => {
+    const upper = key.toUpperCase();
+    if (upper.includes("HOME")) return "HOME";
+    if (upper.includes("COLLECTION")) return "COLLECTION";
+    if (upper.includes("PRODUCT") || upper.includes("SEARCH_HOME")) return "PRODUCT";
+    if (upper.includes("CART")) return "CART";
+    if (upper.includes("ACCOUNT")) return "ACCOUNT";
+    return "CUSTOM";
+  };
 
   const onSubmit = (values: FormValues) => {
+    const resolvedPageType = page?.pageType ?? getPageTypeFromKey(values.pageKey);
+
+    const payload = {
+      name: values.name,
+      slug: values.slug,
+      pageKey: values.pageKey,
+      title: values.title || null,
+      description: values.description || null,
+      platform: page?.platform ?? "BOTH",
+      pageType: resolvedPageType,
+      status: page?.status ?? "DRAFT",
+    };
+
     if (isEdit && page) {
       updatePage.mutate(
-        { id: page.id, payload: values },
+        { id: page.id, payload },
         { onSuccess: () => onOpenChange(false) }
       );
     } else {
-      createPage.mutate(values, {
+      createPage.mutate(payload, {
         onSuccess: (created) => {
           onOpenChange(false);
           onCreated?.(created);
@@ -119,7 +113,6 @@ export function PageFormDialog({
 
   const pending = createPage.isPending || updatePage.isPending;
   const watchName = watch("name");
-  const watchType = watch("pageType");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -166,63 +159,6 @@ export function PageFormDialog({
                 placeholder="HOME_PAGE"
                 className="font-mono text-xs"
               />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="space-y-1.5">
-              <Label>Type</Label>
-              <Select
-                value={watchType}
-                onValueChange={(v) => setValue("pageType", v as PageType)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAGE_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Platform</Label>
-              <Select
-                value={watch("platform")}
-                onValueChange={(v) => setValue("platform", v as Platform)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PLATFORMS.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Status</Label>
-              <Select
-                value={watch("status")}
-                onValueChange={(v) => setValue("status", v as PageStatus)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
