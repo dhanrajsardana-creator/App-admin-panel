@@ -103,7 +103,7 @@ export function RightPanel() {
             <TabsTrigger value="style">
               <Paintbrush /> Style
             </TabsTrigger>
-            {section.sectionType !== "exlusive_offers" && section.sectionType !== "collection_with_products" && (
+            {section.sectionType !== "exlusive_offers" && section.sectionType !== "collection_with_products" && section.sectionKey !== "HOME_HERO_CAROUSEL" && (
               <TabsTrigger value="items">
                 <Layers /> Items
               </TabsTrigger>

@@ -168,9 +168,9 @@ export function BannerSection({ section, items }: SectionRendererProps) {
   }
 
   if (section.sectionKey === "TRENDING_SHOWCASE") {
-    const title = section.title || "DROP IT LIKE IT'S HOT";
-    const subtitle = section.subtitle || "The hottest styles, picked from what you love, curated into fresh collections for your vibe.";
-    const gridImageUrl = str(config, "backgroundMediaValue") || image || "/figma-home/07-banner-a.png";
+    const title = section.title || "";
+    const subtitle = section.subtitle || "";
+    const gridImageUrl = str(config, "backgroundMediaValue") || image;
     return (
       <div
         className="py-6"
@@ -214,7 +214,7 @@ export function BannerSection({ section, items }: SectionRendererProps) {
   }
 
   if (section.sectionKey === "DEALS_SHOWCASE") {
-    const title = section.title || "IRRESISTIBLE DEALS";
+    const title = section.title || "";
 
     // Find COLLECTION item
     const collectionItem = items.find(
@@ -228,8 +228,7 @@ export function BannerSection({ section, items }: SectionRendererProps) {
 
     const heroImageUrl =
       str(config, "backgroundMediaValue") ||
-      collectionItem?.imageUrl ||
-      "/figma-home/12-irresistible-deals.png"; // fallback
+      collectionItem?.imageUrl;
 
     const ctaText = str(config, "buttonText") || (collectionItem?.metadataJson?.buttonText as string | undefined);
     const maxItems = num(config, "maxItems", 5);
@@ -243,11 +242,7 @@ export function BannerSection({ section, items }: SectionRendererProps) {
     });
 
     // If no items are resolved yet in DB (e.g. template initial state), show mock items
-    const displayItems = dealItems.length > 0 ? dealItems : [
-      { id: "mock-1", imageUrl: "/figma-home/07-banner-a.png", priceText: ctaText || "GET IT FOR ₹599" },
-      { id: "mock-2", imageUrl: "/figma-home/09-banner-b.png", priceText: ctaText || "GET IT FOR ₹599" },
-      { id: "mock-3", imageUrl: "/figma-home/10-category-banner-1.png", priceText: ctaText || "GET IT FOR ₹599" },
-    ].slice(0, maxItems);
+    const displayItems = dealItems.slice(0, maxItems);
 
     return (
       <div className="bg-[#f2f4f5]">
@@ -357,8 +352,8 @@ export function HeroCarouselSection({ section, items }: SectionRendererProps) {
   const overlayingTexts: string[] = Array.isArray(rawOverlaying)
     ? rawOverlaying.map(String)
     : [];
-  const overlayLine1 = overlayingTexts[0] ?? "BEYOND";
-  const overlayLine2 = overlayingTexts[1] ?? "ORDINARY";
+  const overlayLine1 = overlayingTexts[0] ?? "";
+  const overlayLine2 = overlayingTexts[1] ?? "";
 
   const overlayingTitle  = str(config, "overlayingTitle");
   const viewAllText      = str(config, "viewAllButtonText") || "Shop Now";
@@ -421,8 +416,7 @@ export function HeroCarouselSection({ section, items }: SectionRendererProps) {
           // Background image: item-level first, then configJson.backgroundMediaValue
           const image =
             (item ? itemImage(item) : null) ||
-            str(config, "backgroundMediaValue") ||
-            "/figma-home/01-hero.png";
+            str(config, "backgroundMediaValue");
 
           const overlayOpacity = num(meta, "overlayOpacity", num(config, "overlayOpacity", 0.2));
           const textColor = str(meta, "textColor") || str(config, "textColor") || "#ffffff";
