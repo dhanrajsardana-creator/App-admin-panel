@@ -126,11 +126,11 @@ export interface CreatePagePayload {
   name: string;
   slug: string;
   pageKey: string;
-  platform: Platform;
-  pageType: PageType;
-  status: PageStatus;
-  title?: string;
-  description?: string;
+  platform?: Platform;
+  pageType?: PageType;
+  status?: PageStatus;
+  title?: string | null;
+  description?: string | null;
 }
 
 export type UpdatePagePayload = Partial<CreatePagePayload> & {
