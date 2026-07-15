@@ -174,8 +174,8 @@ export function ItemFormDialog({
       metadataJson.backgroundMediaType = "IMAGE";
       metadataJson.backgroundMediaValue = imageVal;
     }
-    if (sectionType === "lookbook_grid" || isCarousel) {
-      const titleVal = (form.title as string) || (isCarousel ? "" : "SHOP");
+    if (sectionType === "lookbook_grid") {
+      const titleVal = (form.title as string) || "";
       const imageVal = (form.imageUrl as string) || "";
       metadataJson.overlayingTexts = [titleVal];
       metadataJson.backgroundMediaType = metadataJson.backgroundMediaType || "IMAGE";
