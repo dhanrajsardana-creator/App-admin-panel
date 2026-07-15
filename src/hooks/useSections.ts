@@ -41,7 +41,10 @@ export function useCreateSection(pageId: string | null) {
     mutationFn: (payload: CreateSectionPayload) =>
       sectionsApi.create(pageId as string, payload),
     onSuccess: (section) => {
-      if (pageId) qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+      if (pageId) {
+        qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+        qc.invalidateQueries({ queryKey: ["mobile"] });
+      }
       selectSection(section.id);
       toast.success("Section added");
     },
@@ -67,7 +70,10 @@ export function useUpdateSection(pageId: string | null) {
     },
     onSettled: (section) => {
       endSave();
-      if (pageId) qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+      if (pageId) {
+        qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+        qc.invalidateQueries({ queryKey: ["mobile"] });
+      }
       if (section) qc.invalidateQueries({ queryKey: qk.items(section.id) });
     },
     onError: (e: { message?: string }) =>
@@ -81,7 +87,10 @@ export function useDeleteSection(pageId: string | null) {
   return useMutation({
     mutationFn: (id: string) => sectionsApi.remove(id),
     onSuccess: () => {
-      if (pageId) qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+      if (pageId) {
+        qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+        qc.invalidateQueries({ queryKey: ["mobile"] });
+      }
       selectSection(null);
       toast.success("Section deleted");
     },
@@ -114,7 +123,10 @@ export function useReorderSections(pageId: string | null) {
       toast.error("Failed to reorder sections");
     },
     onSettled: () => {
-      if (pageId) qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+      if (pageId) {
+        qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+        qc.invalidateQueries({ queryKey: ["mobile"] });
+      }
     },
   });
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trash2, Plus, Search } from "lucide-react";
 import {
   Dialog,
@@ -19,15 +19,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/common/Spinner";
-import { useCreateSection } from "@/hooks/useSections";
-import type { CreateSectionPayload } from "@/types";
+import { useCreateSection, useUpdateSection } from "@/hooks/useSections";
+import type { CreateSectionPayload, Section } from "@/types";
 import { toast } from "sonner";
+import { SECTION_CATALOG } from "@/config/sectionCatalog";
 
 interface AddSectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pageId: string;
   existingCount: number;
+  section?: Section | null;
 }
 
 const CONFIG_KEYS = [
@@ -101,15 +103,40 @@ export function AddSectionDialog({
   onOpenChange,
   pageId,
   existingCount,
+  section = null,
 }: AddSectionDialogProps) {
   const createSection = useCreateSection(pageId);
+  const updateSection = useUpdateSection(pageId);
+
+  const defaultSection = SECTION_CATALOG[0];
 
   // Form states
   const [sectionKey, setSectionKey] = useState("SEARCH_HOME_CATEGORY_LIST");
+  const [sectionType, setSectionType] = useState(defaultSection?.type || "BANNER");
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [isVisible, setIsVisible] = useState(true);
   const [configJson, setConfigJson] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    if (!open) return;
+    if (section) {
+      setSectionKey(section.sectionKey);
+      setSectionType(section.sectionType || "BANNER");
+      setTitle(section.title || "");
+      setSubtitle(section.subtitle || "");
+      setIsVisible(section.isVisible);
+      setConfigJson(section.configJson ?? {});
+    } else {
+      const defaultSec = SECTION_CATALOG[0];
+      setSectionKey("SEARCH_HOME_CATEGORY_LIST");
+      setSectionType(defaultSec?.type || "BANNER");
+      setTitle("");
+      setSubtitle("");
+      setIsVisible(true);
+      setConfigJson({});
+    }
+  }, [open, section]);
 
   // Builder states
   const [keySearch, setKeySearch] = useState("");
@@ -154,38 +181,54 @@ export function AddSectionDialog({
       return;
     }
 
+    const selectedDef = SECTION_CATALOG.find((c) => c.type === sectionType);
     const payload: CreateSectionPayload = {
       sectionKey,
-      sectionType: null,
+      sectionType,
       title: title.trim() || null,
       subtitle: subtitle.trim() || null,
-      layoutType: "FULL_WIDTH",
-      visibilityType: "BOTH",
+      layoutType: selectedDef?.defaultLayout || (section?.layoutType ?? "FULL_WIDTH"),
+      visibilityType: section?.visibilityType || "BOTH",
       isVisible,
-      sortOrder: existingCount,
+      sortOrder: section ? section.sortOrder : existingCount,
       configJson,
     };
 
-    createSection.mutate(payload, {
-      onSuccess: () => {
-        onOpenChange(false);
-        // Reset states
-        setSectionKey("SEARCH_HOME_CATEGORY_LIST");
-        setTitle("");
-        setSubtitle("");
-        setIsVisible(true);
-        setConfigJson({});
-      },
-    });
+    if (section) {
+      updateSection.mutate(
+        { id: section.id, payload },
+        {
+          onSuccess: () => {
+            onOpenChange(false);
+          },
+        }
+      );
+    } else {
+      createSection.mutate(payload, {
+        onSuccess: () => {
+          onOpenChange(false);
+          // Reset states
+          const defaultSec = SECTION_CATALOG[0];
+          setSectionKey("SEARCH_HOME_CATEGORY_LIST");
+          setSectionType(defaultSec?.type || "BANNER");
+          setTitle("");
+          setSubtitle("");
+          setIsVisible(true);
+          setConfigJson({});
+        },
+      });
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto scrollbar-thin">
         <DialogHeader>
-          <DialogTitle>Create Section</DialogTitle>
+          <DialogTitle>{section ? "Edit Section" : "Create Section"}</DialogTitle>
           <DialogDescription>
-            Configure and add a new section block to your page.
+            {section
+              ? "Modify the properties of your section block."
+              : "Configure and add a new section block to your page."}
           </DialogDescription>
         </DialogHeader>
 
@@ -198,6 +241,28 @@ export function AddSectionDialog({
               onChange={(e) => setSectionKey(e.target.value.replace(/\s+/g, ""))}
               placeholder="e.g. SEARCH_HOME_CATEGORY_LIST"
             />
+          </div>
+
+          {/* Section Type */}
+          <div className="space-y-1.5">
+            <Label>Section Type</Label>
+            <Select
+              value={sectionType}
+              onValueChange={(val) => {
+                setSectionType(val);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {SECTION_CATALOG.map((cat) => (
+                  <SelectItem key={cat.type} value={cat.type}>
+                    {cat.label} ({cat.type})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Editable Title & Subtitle */}
@@ -391,10 +456,10 @@ export function AddSectionDialog({
           <Button
             type="button"
             onClick={handleCreate}
-            disabled={createSection.isPending}
+            disabled={createSection.isPending || updateSection.isPending}
           >
-            {createSection.isPending && <Spinner />}
-            Create Section
+            {(createSection.isPending || updateSection.isPending) && <Spinner />}
+            {section ? "Save Changes" : "Create Section"}
           </Button>
         </DialogFooter>
       </DialogContent>

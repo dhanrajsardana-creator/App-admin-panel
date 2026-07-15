@@ -13,9 +13,9 @@ function BottomTabBar() {
   const selectCatalog = useBuilderStore((s) => s.selectCatalog);
   const setAppScreen = useBuilderStore((s) => s.setAppScreen);
 
-  const homePage = (pages ?? []).find((p) => p.pageType === "HOME");
-  const accountPage = (pages ?? []).find((p) => p.pageType === "ACCOUNT");
-  const collectionPage = (pages ?? []).find((p) => p.pageType === "COLLECTION");
+  const homePage = (pages ?? []).find((p) => p.pageType === "HOME" || p.pageKey.toUpperCase().includes("HOME"));
+  const accountPage = (pages ?? []).find((p) => p.pageType === "ACCOUNT" || p.pageKey.toUpperCase().includes("ACCOUNT") || p.pageKey.toUpperCase().includes("PROFILE"));
+  const collectionPage = (pages ?? []).find((p) => p.pageType === "COLLECTION" || p.pageKey.toUpperCase().includes("COLLECTION"));
 
   const onHome = homePage?.id === selectedPageId && !catalogPreview && !appScreen;
   const onCategories =
@@ -84,7 +84,7 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
   const catalogPreview = useBuilderStore((s) => s.catalogPreview);
   const appScreen = useBuilderStore((s) => s.appScreen);
 
-  const homePage = (pages ?? []).find((p) => p.pageType === "HOME");
+  const homePage = (pages ?? []).find((p) => p.pageType === "HOME" || p.pageKey.toUpperCase().includes("HOME"));
   const isHomePage = homePage?.id === selectedPageId && !catalogPreview && !appScreen;
 
   return (

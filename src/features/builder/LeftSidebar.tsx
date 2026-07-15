@@ -343,7 +343,7 @@ export function LeftSidebar() {
     if (key.includes("COLLECTION")) return "COLLECTION";
     if (key.includes("PRODUCT") || key === "SEARCH_HOME") return "PRODUCT";
     if (key.includes("CART")) return "CART";
-    if (key.includes("ACCOUNT")) return "ACCOUNT";
+    if (key.includes("ACCOUNT") || key.includes("PROFILE")) return "ACCOUNT";
     return p.pageType;
   };
 

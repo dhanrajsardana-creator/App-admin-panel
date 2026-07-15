@@ -15,6 +15,7 @@ export type FieldDef = (
     group: FieldGroup;
   }
   | { kind: "tags"; key: string; label: string; placeholder?: string; group: FieldGroup }
+  | { kind: "cart_product_labels"; key: string; label: string; group: FieldGroup }
   | { kind: "tuple_text"; key: string; label1: string; label2: string; placeholder1?: string; placeholder2?: string; group: FieldGroup }
   | { kind: "tuple3_text"; key: string; label1: string; label2: string; label3: string; placeholder1?: string; placeholder2?: string; placeholder3?: string; group: FieldGroup }
   | { kind: "media_url"; key: string; typeKey?: string; label: string; placeholder?: string; group: FieldGroup }

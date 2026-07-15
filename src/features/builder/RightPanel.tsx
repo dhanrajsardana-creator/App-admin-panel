@@ -24,6 +24,8 @@ export function RightPanel() {
   const { data: pages } = usePages();
   const page = pages?.find((p) => p.id === selectedPageId) ?? null;
   const isPdp = page?.pageType === "PRODUCT" && page?.pageKey !== "SEARCH_HOME";
+  const isCart = page?.pageKey === "CART_PAGE";
+  const isPdpOrCart = isPdp || isCart;
 
   const { data: sections } = useSections(selectedPageId);
   const section = sections?.find((s) => s.id === selectedSectionId) ?? null;
@@ -74,7 +76,7 @@ export function RightPanel() {
     );
   }
 
-  if (isPdp) {
+  if (isPdpOrCart) {
     return (
       <aside className="flex w-80 shrink-0 flex-col border-l bg-card">
         {/* Header */}
@@ -110,8 +112,63 @@ export function RightPanel() {
 
   const schema = getSectionSchema(section.sectionType, section.sectionKey);
   const config = section.configJson ?? {};
-  const contentFields = schema.fields.filter((f) => f.group === "content");
-  const styleFields = schema.fields.filter((f) => f.group === "style");
+
+  // Dynamically generate field definitions for custom configuration keys not defined in the schema
+  const schemaKeys = new Set(schema.fields.map((f) => f.key));
+  const extraFields: any[] = [];
+  for (const key of Object.keys(config)) {
+    if (!schemaKeys.has(key)) {
+      const val = config[key];
+      let kind = "text";
+      if (typeof val === "boolean") {
+        kind = "switch";
+      } else if (typeof val === "number") {
+        kind = "number";
+      } else if (Array.isArray(val)) {
+        kind = "tags";
+      }
+      const label = key
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (str) => str.toUpperCase());
+      
+      const isStyleGroup = 
+        key.toLowerCase().includes("color") || 
+        key.toLowerCase().includes("opacity") || 
+        key.toLowerCase().includes("size") ||
+        key.toLowerCase().includes("width") ||
+        key.toLowerCase().includes("gap") ||
+        key.toLowerCase().includes("margin") ||
+        key.toLowerCase().includes("padding") ||
+        key.toLowerCase().includes("border") ||
+        key.toLowerCase().includes("radius");
+
+      extraFields.push({
+        kind,
+        key,
+        label,
+        group: isStyleGroup ? "style" : "content",
+      });
+    }
+  }
+
+  const allFields = [...schema.fields, ...extraFields];
+
+  const contentFields = allFields
+    .filter((f) => f.group === "content")
+    .filter((f) => {
+      if (f.isRoot) {
+        return section[f.key as keyof typeof section] !== null && section[f.key as keyof typeof section] !== undefined;
+      }
+      return config[f.key] !== undefined;
+    });
+  const styleFields = allFields
+    .filter((f) => f.group === "style")
+    .filter((f) => {
+      if (f.isRoot) {
+        return section[f.key as keyof typeof section] !== null && section[f.key as keyof typeof section] !== undefined;
+      }
+      return config[f.key] !== undefined;
+    });
 
   return (
     <aside className="flex w-80 shrink-0 flex-col border-l bg-card">

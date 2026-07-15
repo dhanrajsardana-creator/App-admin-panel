@@ -26,6 +26,7 @@ import {
   Code2,
   FolderOpen,
   Package,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
@@ -104,6 +105,7 @@ function SortableSectionRow({
   onSelect,
   onToggleVisible,
   onDelete,
+  onEdit,
   isPdp,
 }: {
   section: Section;
@@ -113,6 +115,7 @@ function SortableSectionRow({
   onSelect: () => void;
   onToggleVisible: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   isPdp?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -175,13 +178,25 @@ function SortableSectionRow({
           )}
         </button>
         {!isPdp && (
-          <button
-            onClick={onDelete}
-            className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-            title="Delete section"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+              title="Edit section settings"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+              title="Delete section"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </>
         )}
       </div>
 
@@ -196,9 +211,13 @@ export function SectionList({ pageId }: { pageId: string }) {
   const selectSection = useBuilderStore((s) => s.selectSection);
   const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
 
+  const [editSection, setEditSection] = useState<Section | null>(null);
+
   const { data: pages } = usePages();
   const page = pages?.find((p) => p.id === pageId) ?? null;
   const isPdp = page?.pageType === "PRODUCT" && page?.pageKey !== "SEARCH_HOME";
+  const isCart = page?.pageKey === "CART_PAGE";
+  const isPdpOrCart = isPdp || isCart;
   const isPdpOrSearchHome = isPdp || page?.pageKey === "SEARCH_HOME";
 
   const qc = useQueryClient();
@@ -253,7 +272,7 @@ export function SectionList({ pageId }: { pageId: string }) {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Sections {localOrder.length > 0 && `(${localOrder.length})`}
         </h3>
-        {!isPdp && (
+        {!isPdpOrCart && (
           <Button
             size="icon-sm"
             variant="ghost"
@@ -273,7 +292,7 @@ export function SectionList({ pageId }: { pageId: string }) {
         ) : localOrder.length === 0 ? (
           <div className="rounded-lg border border-dashed p-6 text-center">
             <p className="text-sm text-muted-foreground">No sections yet.</p>
-            {!isPdp && (
+            {!isPdpOrCart && (
               <Button
                 size="sm"
                 variant="outline"
@@ -316,7 +335,8 @@ export function SectionList({ pageId }: { pageId: string }) {
                     }
                   }}
                   onDelete={() => setPendingDelete(section)}
-                  isPdp={isPdp}
+                  onEdit={() => setEditSection(section)}
+                  isPdp={isPdpOrCart}
                 />
               ))}
             </SortableContext>
@@ -324,7 +344,7 @@ export function SectionList({ pageId }: { pageId: string }) {
         )}
       </div>
 
-      {!isPdp && (
+      {!isPdpOrCart && (
         <Button
           variant="outline"
           size="sm"
@@ -340,6 +360,14 @@ export function SectionList({ pageId }: { pageId: string }) {
         onOpenChange={setAddOpen}
         pageId={pageId}
         existingCount={localOrder.length}
+      />
+
+      <AddSectionDialog
+        open={!!editSection}
+        onOpenChange={(o) => !o && setEditSection(null)}
+        pageId={pageId}
+        existingCount={localOrder.length}
+        section={editSection}
       />
 
       <ConfirmDialog

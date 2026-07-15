@@ -118,7 +118,8 @@ export function ItemFormDialog({
   const isProductShelf = sectionType === "product_shelf";
   const isCategoryProductsShelf = sectionType === "category_products_shelf";
   const isCarousel = sectionType === "CAROUSEL" || sectionType === "carousel";
-  const isList = sectionType === "LIST" || sectionType === "list";
+  const isProfileList = sectionType === "profile_list";
+  const isList = sectionType === "LIST" || sectionType === "list" || isProfileList;
   const { data: allProducts } = useShopifyProducts();
   const { data: allCollections } = useShopifyCollections();
 

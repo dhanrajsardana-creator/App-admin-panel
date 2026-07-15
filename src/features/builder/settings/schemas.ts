@@ -283,6 +283,60 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
       { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
     ],
   },
+  cart_product: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
+      { kind: "cart_product_labels", key: "overlayingTexts", label: "Cart Card Labels", group: "content" },
+      { kind: "text", key: "overlayingTitle", label: "Saved Banner Text", group: "content" },
+      { kind: "select", key: "backgroundMediaType", label: "Background Media Type", options: [{ label: "IMAGE", value: "IMAGE" }, { label: "GIF", value: "GIF" }], group: "content" },
+      { kind: "text", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
+    ],
+  },
+  cart_banner: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "couponCode", label: "Coupon Code", group: "content" },
+      { kind: "text", key: "couponBenefit", label: "Coupon Benefit", group: "content" },
+      { kind: "text", key: "viewMoreText", label: "View More Text", group: "content" },
+      { kind: "text", key: "viewAllText", label: "View All Text", group: "content" },
+      { kind: "switch", key: "isViewAllEnabled", label: "Enable View All", group: "style" },
+      { kind: "text", key: "buttonText", label: "Button Text", group: "content" },
+    ],
+  },
+  cart_summary: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtotal", label: "Subtotal Value", group: "content" },
+      { kind: "text", key: "discount", label: "Discount Value", group: "content" },
+      { kind: "text", key: "shipping", label: "Shipping Text", group: "content" },
+      { kind: "text", key: "grandTotal", label: "Grand Total Value", group: "content" },
+    ],
+  },
+  cart_checkout: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "price", label: "Price Value", group: "content" },
+      { kind: "text", key: "priceLabel", label: "Price Label", group: "content" },
+      { kind: "text", key: "buttonText", label: "Button Text", group: "content" },
+    ],
+  },
+  profile_banner: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtitle", label: "Subtitle", group: "content" },
+      { kind: "text", key: "logoUrl", label: "Logo URL", group: "content" },
+      { kind: "text", key: "backgroundMediaType", label: "Background Media Type", group: "style" },
+      { kind: "text", key: "backgroundMediaValue", label: "Background Media Value", group: "style" },
+    ],
+  },
+  profile_list: {
+    fields: [
+      { kind: "text", key: "title", label: "Group 1 Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtitle", label: "Group 2 Title (e.g. MORE)", group: "content", isRoot: true },
+      { kind: "tags", key: "overlayingTexts", label: "List Menu Items (array)", group: "content" },
+    ],
+  },
 };
 
 export function getSectionSchema(sectionType: string, sectionKey?: string): SectionSchema {
