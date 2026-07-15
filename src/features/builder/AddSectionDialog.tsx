@@ -106,6 +106,8 @@ export function AddSectionDialog({
 
   // Form states
   const [sectionKey, setSectionKey] = useState("SEARCH_HOME_CATEGORY_LIST");
+  const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const [isVisible, setIsVisible] = useState(true);
   const [configJson, setConfigJson] = useState<Record<string, any>>({});
 
@@ -155,8 +157,8 @@ export function AddSectionDialog({
     const payload: CreateSectionPayload = {
       sectionKey,
       sectionType: null,
-      title: null,
-      subtitle: null,
+      title: title.trim() || null,
+      subtitle: subtitle.trim() || null,
       layoutType: "FULL_WIDTH",
       visibilityType: "BOTH",
       isVisible,
@@ -169,6 +171,8 @@ export function AddSectionDialog({
         onOpenChange(false);
         // Reset states
         setSectionKey("SEARCH_HOME_CATEGORY_LIST");
+        setTitle("");
+        setSubtitle("");
         setIsVisible(true);
         setConfigJson({});
       },
@@ -196,21 +200,23 @@ export function AddSectionDialog({
             />
           </div>
 
-          {/* Section Type (always null under-the-hood) */}
-          <div className="space-y-1.5">
-            <Label>Section Type</Label>
-            <Input value="null" disabled className="bg-muted text-muted-foreground" />
-          </div>
-
-          {/* Title & Subtitle (preset to null) */}
+          {/* Editable Title & Subtitle */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Title</Label>
-              <Input value="null" disabled className="bg-muted text-muted-foreground" />
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Featured Products"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Subtitle</Label>
-              <Input value="null" disabled className="bg-muted text-muted-foreground" />
+              <Input
+                value={subtitle}
+                onChange={(e) => setSubtitle(e.target.value)}
+                placeholder="e.g. Trending items"
+              />
             </div>
           </div>
 
@@ -286,7 +292,7 @@ export function AddSectionDialog({
                       className="pl-8 h-8 text-xs"
                     />
                   </div>
-                  
+
                   <div className="max-h-40 overflow-y-auto border rounded divide-y bg-background text-xs scrollbar-thin">
                     {filteredKeys.map((k) => (
                       <button
