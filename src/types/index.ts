@@ -139,11 +139,12 @@ export type UpdatePagePayload = Partial<CreatePagePayload> & {
 
 export interface CreateSectionPayload {
   sectionKey: string;
-  sectionType: string;
+  sectionType: string | null;
   title?: string | null;
   subtitle?: string | null;
   layoutType: LayoutType;
   visibilityType?: VisibilityType;
+  isVisible?: boolean;
   sortOrder: number;
   configJson?: JsonMap;
 }
