@@ -61,6 +61,7 @@ export interface SectionItem {
   endAt: string | null;
   createdAt: string;
   updatedAt: string;
+  resolved?: any;
 }
 
 export interface Section {

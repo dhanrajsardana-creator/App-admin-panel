@@ -324,7 +324,7 @@ export function FeaturedCollectionSection({ section, items }: SectionRendererPro
           {displayProducts.map((p) => (
             <div key={p.id} className="relative aspect-[3/4] cursor-pointer overflow-hidden bg-zinc-100">
               <img
-                src={p.featuredImage?.url || p.imageUrl}
+                src={p.imageUrl || undefined}
                 alt={p.title}
                 className="h-full w-full object-cover"
               />

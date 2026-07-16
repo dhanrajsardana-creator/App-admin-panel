@@ -168,7 +168,7 @@ function renderPdpContent(
 
   // Rating & review
   if (t.includes("rating") || t.includes("review")) {
-    const defaultImg = product.featuredImage?.url || "https://placehold.co/400";
+    const defaultImg = product.images?.[0]?.url || "https://placehold.co/400";
     const reviews = [1, 2, 3];
     
     // Generate a list of diverse images from the product, falling back to defaultImg

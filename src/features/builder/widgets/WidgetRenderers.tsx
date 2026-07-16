@@ -838,6 +838,7 @@ export function IrresistibleDealsWidget_({ widget }: { widget: IrresistibleDeals
 // ── 11. Category Showcase ─────────────────────────────────────────────────────
 
 export function CategoryShowcaseWidget_({ widget }: { widget: CategoryShowcaseWidget }) {
+  const { data } = widget;
   const { categoryName, productCountText, bannerImageUrl, products, viewAllAction, buttonText } = data;
 
   // Map fallback banner image based on title
@@ -901,7 +902,7 @@ export function CategoryShowcaseWidget_({ widget }: { widget: CategoryShowcaseWi
       {/* Horizontal product cards */}
       {products.length > 0 && (
         <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 py-5 bg-[#121212]">
-          {products.map((p) => (
+          {products.map((p: WidgetProductItem) => (
             <ProductCard key={p.id} item={p} width={150} theme="dark" />
           ))}
         </div>
