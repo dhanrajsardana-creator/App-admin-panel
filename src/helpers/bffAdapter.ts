@@ -324,7 +324,33 @@ export const bffAdapter = {
     let items: ProfileListItem[] = [];
     let moreItems: ProfileListItem[] = [];
 
-    if (overlayingTexts.length > 0) {
+    const sectionItems = section.items ?? [];
+
+    if (sectionItems.length > 0) {
+      if (section.subtitle && sectionItems.length > 5) {
+        const firstGroup = sectionItems.slice(0, 5);
+        const secondGroup = sectionItems.slice(5);
+        items = firstGroup.map((item) => ({
+          id: item.id,
+          title: item.title || 'Navigation Item',
+          icon: item.subtitle || '',
+          url: item.redirectValue || '',
+        }));
+        moreItems = secondGroup.map((item) => ({
+          id: item.id,
+          title: item.title || 'Navigation Item',
+          icon: item.subtitle || '',
+          url: item.redirectValue || '',
+        }));
+      } else {
+        items = sectionItems.map((item) => ({
+          id: item.id,
+          title: item.title || 'Navigation Item',
+          icon: item.subtitle || '',
+          url: item.redirectValue || '',
+        }));
+      }
+    } else if (overlayingTexts.length > 0) {
       const firstGroup = overlayingTexts.slice(0, 5);
       const secondGroup = overlayingTexts.slice(5);
 
@@ -351,13 +377,7 @@ export const bffAdapter = {
         }))];
       }
     } else {
-      const sectionItems = section.items ?? [];
-      items = sectionItems.map((item) => ({
-        id: item.id,
-        title: item.title || 'Navigation Item',
-        icon: item.subtitle || '',
-        url: item.redirectValue || '',
-      }));
+      items = [];
     }
 
     return {

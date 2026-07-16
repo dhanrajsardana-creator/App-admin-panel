@@ -75,40 +75,59 @@ export function usePublishPage() {
     mutationFn: async (page: Page) => {
       // ── 1. Flush any locally-queued section edits to the API ──────────────
       const pending = flushPendingEdits();
-
-      if (pending.length > 0) {
-        await Promise.all(
-          pending.map(({ id, payload }) => sectionsApi.update(id, payload))
-        );
-      }
-
       // ── 2. Flush pending item actions sequentially ───────────────────────
       const itemActions = flushPendingItemActions();
-      if (itemActions.length > 0) {
-        const idMap = new Map<string, string>(); // Maps temp IDs to real IDs
-        
-        for (const action of itemActions) {
-          if (action.type === 'CREATE') {
-            const created = await itemsApi.create(action.sectionId, action.payload);
-            idMap.set(action.tempId, created.id);
-          } else if (action.type === 'UPDATE') {
-            const realId = idMap.get(action.itemId) || action.itemId;
-            await itemsApi.update(realId, action.payload);
-          } else if (action.type === 'DELETE') {
-            const realId = idMap.get(action.itemId) || action.itemId;
-            await itemsApi.remove(realId);
-          } else if (action.type === 'REORDER') {
-            const mappedOrdered = action.ordered.map(o => ({
-              id: idMap.get(o.id) || o.id,
-              sortOrder: o.sortOrder
-            }));
-            await itemsApi.reorder(mappedOrdered);
+
+      try {
+        if (pending.length > 0) {
+          await Promise.all(
+            pending.map(({ id, payload }) => sectionsApi.update(id, payload))
+          );
+        }
+
+        if (itemActions.length > 0) {
+          const idMap = new Map<string, string>(); // Maps temp IDs to real IDs
+          
+          for (const action of itemActions) {
+            if (action.type === 'CREATE') {
+              const created = await itemsApi.create(action.sectionId, action.payload);
+              idMap.set(action.tempId, created.id);
+            } else if (action.type === 'UPDATE') {
+              const realId = idMap.get(action.itemId) || action.itemId;
+              await itemsApi.update(realId, action.payload);
+            } else if (action.type === 'DELETE') {
+              const realId = idMap.get(action.itemId) || action.itemId;
+              await itemsApi.remove(realId);
+            } else if (action.type === 'REORDER') {
+              const mappedOrdered = action.ordered.map(o => ({
+                id: idMap.get(o.id) || o.id,
+                sortOrder: o.sortOrder
+              }));
+              await itemsApi.reorder(mappedOrdered);
+            }
           }
         }
-      }
 
-      // ── 3. Publish the page ───────────────────────────────────────────────
-      return pagesApi.publish(page.id);
+        // ── 3. Publish the page ───────────────────────────────────────────────
+        return await pagesApi.publish(page.id);
+      } catch (err) {
+        // Restore pending edits and item actions so they aren't lost on failure
+        const restoredEdits: Record<string, UpdateSectionPayload> = {};
+        for (const { id, payload } of pending) {
+          restoredEdits[id] = payload;
+        }
+        useBuilderStore.setState({
+          pendingEdits: {
+            ...useBuilderStore.getState().pendingEdits,
+            ...restoredEdits,
+          },
+          pendingItemActions: [
+            ...itemActions,
+            ...useBuilderStore.getState().pendingItemActions,
+          ],
+        });
+        throw err;
+      }
     },
     onSuccess: (page) => {
       qc.invalidateQueries({ queryKey: qk.pages });

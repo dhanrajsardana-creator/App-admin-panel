@@ -114,12 +114,12 @@ export function ItemFormDialog({
   const isEdit = !!item;
   const createItem = useCreateItem(sectionId);
   const updateItem = useUpdateItem(sectionId);
-  const isNewDrop = sectionType === "new_drop_products";
-  const isProductShelf = sectionType === "product_shelf";
-  const isCategoryProductsShelf = sectionType === "category_products_shelf";
-  const isCarousel = sectionType === "CAROUSEL" || sectionType === "carousel";
-  const isProfileList = sectionType === "profile_list";
-  const isList = sectionType === "LIST" || sectionType === "list" || isProfileList;
+  const isNewDrop = sectionType?.toLowerCase() === "new_drop_products";
+  const isProductShelf = sectionType?.toLowerCase() === "product_shelf";
+  const isCategoryProductsShelf = sectionType?.toLowerCase() === "category_products_shelf";
+  const isCarousel = sectionType?.toLowerCase() === "carousel";
+  const isProfileList = sectionType?.toLowerCase() === "profile_list";
+  const isList = sectionType?.toLowerCase() === "list" || isProfileList;
   const { data: allProducts } = useShopifyProducts();
   const { data: allCollections } = useShopifyCollections();
 
@@ -156,7 +156,7 @@ export function ItemFormDialog({
           imageUrl: f.imageUrl || product.imageUrl,
           mobileImageUrl: f.mobileImageUrl || product.imageUrl,
           redirectType: "PRODUCT",
-          redirectValue: product.id,
+          redirectValue: String(product.id),
         }));
       }
     }
@@ -167,7 +167,7 @@ export function ItemFormDialog({
 
   const handleSave = () => {
     let metadataJson: JsonMap = { ...metaJson };
-    if (sectionType === "hero_carousel") {
+    if (sectionType?.toLowerCase() === "hero_carousel") {
       const titleVal = (form.title as string) || "BEYOND";
       const subtitleVal = (form.subtitle as string) || "ORDINARY";
       const imageVal = (form.imageUrl as string) || "";
@@ -175,7 +175,7 @@ export function ItemFormDialog({
       metadataJson.backgroundMediaType = "IMAGE";
       metadataJson.backgroundMediaValue = imageVal;
     }
-    if (sectionType === "lookbook_grid" || isCarousel) {
+    if (sectionType?.toLowerCase() === "lookbook_grid" || isCarousel) {
       const titleVal = (form.title as string) || (isCarousel ? "" : "SHOP");
       const imageVal = (form.imageUrl as string) || "";
       metadataJson.overlayingTexts = [titleVal];
@@ -186,10 +186,10 @@ export function ItemFormDialog({
       ...form,
       referenceType:
         !form.referenceType || form.referenceType === "NONE" ? null : (form.referenceType as string),
-      referenceId: !form.referenceId ? null : (form.referenceId as string),
+      referenceId: !form.referenceId ? null : String(form.referenceId),
       redirectType:
         !form.redirectType || form.redirectType === "NONE" ? null : (form.redirectType as string),
-      redirectValue: !form.redirectValue ? null : (form.redirectValue as string),
+      redirectValue: !form.redirectValue ? null : String(form.redirectValue),
       metadataJson,
     };
     if (form.referenceType === "PRODUCT" && form.referenceId && allProducts) {
@@ -199,11 +199,11 @@ export function ItemFormDialog({
         payload.imageUrl = payload.imageUrl || product.imageUrl;
         payload.mobileImageUrl = payload.mobileImageUrl || product.imageUrl;
         payload.redirectType = "PRODUCT";
-        payload.redirectValue = product.id;
+        payload.redirectValue = String(product.id);
         payload.metadataJson = {
           ...(payload.metadataJson ?? {}),
           productHandle: product.handle,
-          productId: product.id,
+          productId: String(product.id),
         };
       }
     }
@@ -221,12 +221,12 @@ export function ItemFormDialog({
   };
 
   const pending = createItem.isPending || updateItem.isPending;
-  const isHeroCarousel = sectionType === "hero_carousel";
-  const isMoodGrid = sectionType === "mood_grid";
-  const isPromoHero = sectionType === "promo_hero";
-  const isCategoryGrid = sectionType === "category_grid";
-  const isExclusiveOffers = sectionType === "exlusive_offers";
-  const isLookbookGrid = sectionType === "lookbook_grid";
+  const isHeroCarousel = sectionType?.toLowerCase() === "hero_carousel";
+  const isMoodGrid = sectionType?.toLowerCase() === "mood_grid";
+  const isPromoHero = sectionType?.toLowerCase() === "promo_hero";
+  const isCategoryGrid = sectionType?.toLowerCase() === "category_grid";
+  const isExclusiveOffers = sectionType?.toLowerCase() === "exlusive_offers";
+  const isLookbookGrid = sectionType?.toLowerCase() === "lookbook_grid";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -356,10 +356,10 @@ export function ItemFormDialog({
                         const next = { ...f, redirectValue: val };
                         if (next.redirectType === "PRODUCT") {
                           const p = allProducts?.find(p => p.handle === val);
-                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = p.id; }
+                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = String(p.id); }
                         } else {
                           const c = allCollections?.find(c => c.handle === val);
-                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = c.id; }
+                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = String(c.id); }
                         }
                         return next;
                       });
@@ -481,10 +481,10 @@ export function ItemFormDialog({
                         const next = { ...f, redirectValue: val };
                         if (next.redirectType === "PRODUCT") {
                           const p = allProducts?.find(p => p.handle === val);
-                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = p.id; }
+                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = String(p.id); }
                         } else {
                           const c = allCollections?.find(c => c.handle === val);
-                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = c.id; }
+                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = String(c.id); }
                         }
                         return next;
                       });

@@ -13,6 +13,7 @@ import {
   Phone,
   Truck,
   Shield,
+  ShieldCheck,
   Box,
   RotateCcw,
   ArrowLeftRight,
@@ -819,14 +820,14 @@ function getProfileIcon(name?: string) {
   if (norm.includes("profile") || norm.includes("user")) return <User className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
   if (norm.includes("address") || norm.includes("store") || norm.includes("locator") || norm.includes("map")) return <MapPin className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
   if (norm.includes("wishlist") || norm.includes("heart")) return <Heart className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
-  if (norm.includes("history") || norm.includes("order") || norm.includes("clock")) return <History className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
   if (norm.includes("wallet") || norm.includes("card") || norm.includes("payment")) return <Wallet className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
   if (norm.includes("support") || norm.includes("phone") || norm.includes("contact")) return <Phone className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
   if (norm.includes("shipping") || norm.includes("truck") || norm.includes("delivery")) return <Truck className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
-  if (norm.includes("privacy") || norm.includes("shield") || norm.includes("policy")) return <Shield className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
   if (norm.includes("track") || norm.includes("box") || norm.includes("package")) return <Box className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
-  if (norm.includes("refund") || norm.includes("rotate") || norm.includes("return")) return <RotateCcw className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
   if (norm.includes("exchange") || norm.includes("repeat") || norm.includes("arrow")) return <ArrowLeftRight className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
+  if (norm.includes("refund") || norm.includes("rotate") || norm.includes("return")) return <RotateCcw className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
+  if (norm.includes("history") || norm.includes("order") || norm.includes("clock")) return <History className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
+  if (norm.includes("privacy") || norm.includes("shield") || norm.includes("policy")) return <ShieldCheck className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
   return <User className="h-[21px] w-[21px] text-zinc-600" strokeWidth={1.25} />;
 }
 
@@ -838,7 +839,15 @@ export function ProfileListSection({ section, items = [] }: SectionRendererProps
   let renderItems = items;
   let moreItems: typeof items = [];
 
-  if (overlayingTexts.length > 0) {
+  if (items && items.length > 0) {
+    if (subtitle && items.length > 5) {
+      renderItems = items.slice(0, 5);
+      moreItems = items.slice(5);
+    } else {
+      renderItems = items;
+      moreItems = [];
+    }
+  } else if (overlayingTexts.length > 0) {
     const firstGroup = overlayingTexts.slice(0, 5);
     const secondGroup = overlayingTexts.slice(5);
 

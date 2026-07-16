@@ -43,8 +43,9 @@ export function TopBar({ activeTab, setActiveTab }: TopBarProps) {
   const previewSource = useBuilderStore((s) => s.previewSource);
   const setPreviewSource = useBuilderStore((s) => s.setPreviewSource);
   const pendingEdits = useBuilderStore((s) => s.pendingEdits);
+  const pendingItemActions = useBuilderStore((s) => s.pendingItemActions);
 
-  const hasChanges = Object.keys(pendingEdits).length > 0;
+  const hasChanges = Object.keys(pendingEdits).length > 0 || pendingItemActions.length > 0;
 
   const { data: page } = usePage(selectedPageId);
   const publish = usePublishPage();
