@@ -87,7 +87,7 @@ export function usePublishPage() {
 
         if (itemActions.length > 0) {
           const idMap = new Map<string, string>(); // Maps temp IDs to real IDs
-          
+
           for (const action of itemActions) {
             if (action.type === 'CREATE') {
               const created = await itemsApi.create(action.sectionId, action.payload);

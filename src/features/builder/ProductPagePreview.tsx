@@ -647,7 +647,7 @@ export function ProductPagePreview({
     <div>
       <ProductHeader product={product} />
       {sections.map((section) => {
-        if (!section.isVisible) {
+        if (section.isVisible === false) {
           return (
             <SectionBlock
               key={section.id}

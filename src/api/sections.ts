@@ -30,18 +30,18 @@ export const sectionsApi = {
     payload: UpdateSectionPayload
   ): Promise<Section> => {
     const body: Record<string, any> = {};
-    if (payload.title !== undefined)              body.title = payload.title;
-    if (payload.subtitle !== undefined)           body.subtitle = payload.subtitle;
-    if (payload.sectionKey !== undefined)         body.sectionKey = payload.sectionKey;
-    if (payload.sectionType !== undefined)        body.sectionType = payload.sectionType;
-    if (payload.layoutType !== undefined)         body.layoutType = payload.layoutType;
-    if (payload.visibilityType !== undefined)     body.visibilityType = payload.visibilityType;
-    if (payload.isVisible !== undefined)          body.isVisible = payload.isVisible;
-    if (payload.isActive !== undefined)           body.isActive = payload.isActive;
-    if (payload.sortOrder !== undefined)          body.sortOrder = payload.sortOrder;
-    if (payload.backgroundColor !== undefined)    body.backgroundColor = payload.backgroundColor;
-    if (payload.backgroundImage !== undefined)    body.backgroundImage = payload.backgroundImage;
-    if (payload.configJson !== undefined)         body.configJson = payload.configJson;
+    if (payload.title !== undefined) body.title = payload.title;
+    if (payload.subtitle !== undefined) body.subtitle = payload.subtitle;
+    if (payload.sectionKey !== undefined) body.sectionKey = payload.sectionKey;
+    if (payload.sectionType !== undefined) body.sectionType = payload.sectionType;
+    if (payload.layoutType !== undefined) body.layoutType = payload.layoutType;
+    if (payload.visibilityType !== undefined) body.visibilityType = payload.visibilityType;
+    if (payload.isVisible !== undefined) body.isVisible = payload.isVisible;
+    if (payload.isActive !== undefined) body.isActive = payload.isActive;
+    if (payload.sortOrder !== undefined) body.sortOrder = payload.sortOrder;
+    if (payload.backgroundColor !== undefined) body.backgroundColor = payload.backgroundColor;
+    if (payload.backgroundImage !== undefined) body.backgroundImage = payload.backgroundImage;
+    if (payload.configJson !== undefined) body.configJson = payload.configJson;
 
     const { data } = await api.put<ApiResponse<Section>>(
       `/cms/sections/${sectionId}`,

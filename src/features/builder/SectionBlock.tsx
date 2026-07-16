@@ -30,7 +30,7 @@ export function SectionBlock({
   const Renderer = getSectionRenderer(section.sectionType);
 
   // Hidden sections show an Appbrew-style placeholder instead of content.
-  if (!section.isVisible) {
+  if (section.isVisible === false) {
     return (
       <div
         id={`section-${section.id}`}

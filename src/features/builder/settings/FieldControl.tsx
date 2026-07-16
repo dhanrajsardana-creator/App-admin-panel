@@ -310,10 +310,10 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
           )}
           <div className="space-y-1.5">
             <Label>{field.label}</Label>
-            <Input
-              value={str(config, field.key) || field.placeholder || ""}
+            <ImageUploadInput
+              value={str(config, field.key) || ""}
               placeholder={field.placeholder || "https://..."}
-              onChange={(e) => onChange(field.key, e.target.value)}
+              onChange={(v) => onChange(field.key, v)}
             />
           </div>
         </div>

@@ -1019,17 +1019,21 @@ export function TheRotationWidget_({ widget }: { widget: TheRotationWidget }) {
 
       {/* Continue browsing products */}
       {products.length > 0 && (
-        <div className="bg-zinc-800 py-4">
-          <p className="mb-3 px-4 text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-400">
+        <div className="bg-zinc-900 pb-8 pt-4">
+          <p className="mb-4 px-4 text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-300">
             Continue Browsing
           </p>
           <div className="no-scrollbar flex gap-3 overflow-x-auto px-4">
             {products.map((p) => (
-              <div key={p.id} className="w-[120px] shrink-0 cursor-pointer">
-                <div className="aspect-[3/4] overflow-hidden rounded-sm bg-zinc-700">
+              <div key={p.id} className="w-[150px] shrink-0 cursor-pointer bg-white">
+                <div className="aspect-[3/4] overflow-hidden bg-zinc-100">
                   <Img src={p.imageUrl} alt={p.priceText} />
                 </div>
-                <p className="mt-1 text-center text-[10px] text-zinc-400">{p.priceText}</p>
+                <div className="py-3 flex justify-center items-center">
+                  <p className="text-center text-[11px] uppercase leading-tight text-zinc-800 font-bold">
+                    {p.priceText}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

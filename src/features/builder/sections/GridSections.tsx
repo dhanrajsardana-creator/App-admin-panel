@@ -50,6 +50,10 @@ export function CategoryGridSection({ section, items }: SectionRendererProps) {
 
 /** lookbook_grid — editorial image grid with overlay labels, redesigned to match Figma hero style. */
 export function LookbookGridSection({ section, items }: SectionRendererProps) {
+  if (section.sectionKey === 'THE_ROTATION') {
+    return <TheRotationSection section={section} items={items} />;
+  }
+
   const config = section.configJson ?? {};
   
   // Parse heading and subheading from overlayingTexts array
@@ -150,6 +154,85 @@ export function LookbookGridSection({ section, items }: SectionRendererProps) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function TheRotationSection({ section, items }: SectionRendererProps) {
+  const config = section.configJson ?? {};
+  const overlayingTexts = Array.isArray(config.overlayingTexts) ? config.overlayingTexts : [];
+  
+  const title = section.title || "THE ROTATION";
+  const subtitle = (config.overlayingTitle as string) || section.subtitle || "POWERLOOK PRESENTS";
+  const taglines = overlayingTexts.length > 0 ? overlayingTexts : ["EXPLOSIVE", "DRAMA", "STYLISH"];
+
+  const heroImageUrl = (config.backgroundMediaValue as string) || section.backgroundImage || "";
+  const products = items;
+
+  const DISPLAY_FONT = "'Bebas Neue', 'Oswald', sans-serif";
+
+  return (
+    <div className="bg-zinc-900">
+      {/* Hero section */}
+      {heroImageUrl && (
+        <div className="relative aspect-[9/10] w-full overflow-hidden">
+          <PreviewImage src={heroImageUrl} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-zinc-900/30 to-transparent" />
+
+          <div className="absolute inset-x-4 bottom-8 flex flex-col items-center gap-2 text-center">
+            {subtitle && (
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/70">
+                {subtitle}
+              </p>
+            )}
+            {title && (
+              <h2
+                className="text-[36px] uppercase leading-none text-white"
+                style={{ fontFamily: DISPLAY_FONT }}
+              >
+                {title}
+              </h2>
+            )}
+            {taglines.length > 0 && (
+              <div className="flex items-center gap-2">
+                {taglines.map((tag, i) => (
+                  <span key={tag} className="flex items-center gap-2 text-[9px] font-medium uppercase tracking-[0.15em] text-zinc-400">
+                    {i > 0 && <span className="text-zinc-500">•</span>}
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            
+            <button className="mt-2 flex items-center gap-2 rounded-sm bg-white px-5 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-900">
+              View All <span className="text-[14px]">→</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Continue browsing products */}
+      {products.length > 0 && (
+        <div className="bg-zinc-900 pb-8 pt-4">
+          <p className="mb-4 px-4 text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-300">
+            Continue Browsing
+          </p>
+          <div className="no-scrollbar flex gap-3 overflow-x-auto px-4">
+            {products.map((p, i) => (
+              <div key={p?.id ?? i} className="w-[150px] shrink-0 cursor-pointer bg-white">
+                <div className="aspect-[3/4] overflow-hidden bg-zinc-100 relative">
+                  <PreviewImage src={itemImage(p)} className="absolute inset-0 h-full w-full object-cover" />
+                </div>
+                <div className="py-3 flex justify-center items-center">
+                  <p className="text-center text-[11px] uppercase leading-tight text-zinc-800 font-bold">
+                    GET IT FOR ₹{(p as any)?.resolved?.price?.amount || '599'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

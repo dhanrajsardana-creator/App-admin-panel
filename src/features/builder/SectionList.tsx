@@ -138,7 +138,7 @@ function SortableSectionRow({
         selected
           ? "border-primary bg-primary/5"
           : "border-transparent hover:border-border hover:bg-accent",
-        !section.isVisible && "opacity-60"
+        section.isVisible === false && "opacity-60"
       )}
     >
       <div className="flex items-center gap-1">
@@ -169,9 +169,9 @@ function SortableSectionRow({
         <button
           onClick={onToggleVisible}
           className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-          title={section.isVisible ? "Hide section" : "Show section"}
+          title={section.isVisible !== false ? "Hide section" : "Show section"}
         >
-          {section.isVisible ? (
+          {section.isVisible !== false ? (
             <Eye className="h-4 w-4" />
           ) : (
             <EyeOff className="h-4 w-4" />
@@ -324,13 +324,13 @@ export function SectionList({ pageId }: { pageId: string }) {
                   onSelect={() => selectSection(section.id)}
                   onToggleVisible={() => {
                     if (isPdpOrSearchHome) {
-                      const nextVisible = !section.isVisible;
+                      const nextVisible = section.isVisible === false ? true : false;
                       patchCache(section.id, { isVisible: nextVisible });
                       queueSectionEdit(section.id, { isVisible: nextVisible });
                     } else {
                       updateSection.mutate({
                         id: section.id,
-                        payload: { isVisible: !section.isVisible },
+                        payload: { isVisible: section.isVisible === false ? true : false },
                       });
                     }
                   }}

@@ -101,7 +101,7 @@ export function RightPanel() {
           <div className="flex items-center justify-between rounded-md border px-3 py-2">
             <Label className="text-sm font-medium text-foreground">Visible</Label>
             <Switch
-              checked={section.isVisible}
+              checked={section.isVisible !== false}
               onCheckedChange={(v) => patchField({ isVisible: v })}
             />
           </div>
@@ -232,10 +232,12 @@ export function RightPanel() {
           <TabsContent value="style" className="mt-0 space-y-3">
             <div className="flex items-center justify-between rounded-md border px-3 py-2">
               <Label className="text-sm text-foreground">Visible</Label>
-              <Switch
-                checked={section.isVisible}
-                onCheckedChange={(v) => patchField({ isVisible: v })}
-              />
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={section.isVisible !== false}
+                  onCheckedChange={(v) => patchField({ isVisible: v })}
+                />
+              </div>
             </div>
 
             {styleFields.length > 0 ? (

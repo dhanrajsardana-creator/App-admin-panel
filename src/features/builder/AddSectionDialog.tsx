@@ -125,7 +125,7 @@ export function AddSectionDialog({
       setSectionType(section.sectionType || "BANNER");
       setTitle(section.title || "");
       setSubtitle(section.subtitle || "");
-      setIsVisible(section.isVisible);
+      setIsVisible(section.isVisible !== false);
       setConfigJson(section.configJson ?? {});
     } else {
       const defaultSec = SECTION_CATALOG[0];

@@ -187,6 +187,9 @@ export const bffAdapter = {
       case 'DEALS_SHOWCASE':
         return bffAdapter.toIrresistibleDeals(section)
 
+      case 'THE_ROTATION':
+        return bffAdapter.toTheRotation(section)
+
       default:
         console.warn(`[bffAdapter] No adapter match for sectionKey: ${section.sectionKey}`)
         return null
@@ -975,27 +978,32 @@ export const bffAdapter = {
    */
   toTheRotation: (section: Section): TheRotationWidget => {
     const items = section.items ?? []
-    const heroImageUrl = items[0]?.imageUrl || items[0]?.mobileImageUrl || undefined
+    const config = section.configJson ?? {}
+    
+    const heroImageUrl = (config.backgroundMediaValue as string) || undefined
 
-    const products = items.slice(1).map((item) => {
+    const products = items.map((item) => {
       const resolved = (item as any).resolved as any
       return {
         id: item.id,
         imageUrl: resolved?.featuredImage?.url || resolved?.images?.[0]?.url || item.imageUrl || '',
-        priceText: `₹${parseFloat(resolved?.price?.amount || '0').toFixed(0)}`,
+        priceText: `GET IT FOR ₹${parseFloat(resolved?.price?.amount || '0').toFixed(0)}`,
         action: mapBffAction(item.redirectType, item.redirectValue),
       }
     })
+
+    const overlayingTexts = Array.isArray(config.overlayingTexts) ? config.overlayingTexts : []
+    const taglines = overlayingTexts.length > 0 ? overlayingTexts : ['EXPLOSIVE', 'DRAMA', 'STYLISH']
 
     return {
       id: section.id || `${section.sectionKey}_${section.sortOrder}`,
       widgetType: 'THE_ROTATION',
       order: section.sortOrder,
       data: {
-        heroImageUrl,
-        title: section.title || '',
-        subtitle: section.subtitle || '',
-        taglines: [],
+        heroImageUrl: heroImageUrl || section.backgroundImage || undefined,
+        title: section.title || 'THE ROTATION',
+        subtitle: (config.overlayingTitle as string) || section.subtitle || 'POWERLOOK PRESENTS',
+        taglines,
         products,
         viewAllAction: mapBffAction(
           (section.configJson?.viewAllRedirectType as string) || 'COLLECTION',
