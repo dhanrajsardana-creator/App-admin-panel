@@ -6,4 +6,5 @@ export const qk = {
   mobileHome: ["mobile", "home"] as const,
   mobilePage: (key: string) => ["mobile", "page", key] as const,
   me: ["auth", "me"] as const,
+  offers: (isActive?: boolean) => ["offers", { isActive }] as const,
 };

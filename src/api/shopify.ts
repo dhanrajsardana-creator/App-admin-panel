@@ -319,4 +319,230 @@ export const shopifyApi = {
       price: money(p.priceRange?.minVariantPrice ?? null),
     };
   },
+
+  discounts: async (): Promise<ShopifyDiscountNode[]> => {
+    const query = `query GetDiscounts {
+      discountNodes(first: 100) {
+        edges {
+          node {
+            id
+            discount {
+              __typename
+              ... on DiscountCodeBasic {
+                title
+                status
+                summary
+                startsAt
+                endsAt
+                createdAt
+                updatedAt
+                appliesOncePerCustomer
+                usageLimit
+                asyncUsageCount
+                combinesWith {
+                  orderDiscounts
+                  productDiscounts
+                  shippingDiscounts
+                }
+                codes(first: 50) {
+                  nodes {
+                    code
+                  }
+                }
+                customerSelection {
+                  __typename
+                }
+                customerGets {
+                  value {
+                    __typename
+                  }
+                  items {
+                    __typename
+                  }
+                }
+              }
+              ... on DiscountAutomaticBasic {
+                title
+                status
+                summary
+                startsAt
+                endsAt
+                createdAt
+                updatedAt
+                asyncUsageCount
+                combinesWith {
+                  orderDiscounts
+                  productDiscounts
+                  shippingDiscounts
+                }
+                customerGets {
+                  value {
+                    __typename
+                  }
+                  items {
+                    __typename
+                  }
+                }
+              }
+              ... on DiscountCodeBxgy {
+                title
+                status
+                summary
+                startsAt
+                endsAt
+                createdAt
+                updatedAt
+                usageLimit
+                asyncUsageCount
+                combinesWith {
+                  orderDiscounts
+                  productDiscounts
+                  shippingDiscounts
+                }
+                codes(first: 50) {
+                  nodes {
+                    code
+                  }
+                }
+                customerBuys {
+                  value {
+                    __typename
+                  }
+                  items {
+                    __typename
+                  }
+                }
+                customerGets {
+                  value {
+                    __typename
+                  }
+                  items {
+                    __typename
+                  }
+                }
+              }
+              ... on DiscountAutomaticBxgy {
+                title
+                status
+                summary
+                startsAt
+                endsAt
+                createdAt
+                updatedAt
+                asyncUsageCount
+                combinesWith {
+                  orderDiscounts
+                  productDiscounts
+                  shippingDiscounts
+                }
+                customerBuys {
+                  value {
+                    __typename
+                  }
+                  items {
+                    __typename
+                  }
+                }
+                customerGets {
+                  value {
+                    __typename
+                  }
+                  items {
+                    __typename
+                  }
+                }
+              }
+              ... on DiscountCodeFreeShipping {
+                title
+                status
+                summary
+                startsAt
+                endsAt
+                createdAt
+                updatedAt
+                usageLimit
+                asyncUsageCount
+                combinesWith {
+                  orderDiscounts
+                  productDiscounts
+                  shippingDiscounts
+                }
+                codes(first: 50) {
+                  nodes {
+                    code
+                  }
+                }
+              }
+              ... on DiscountAutomaticFreeShipping {
+                title
+                status
+                summary
+                startsAt
+                endsAt
+                createdAt
+                updatedAt
+                asyncUsageCount
+                combinesWith {
+                  orderDiscounts
+                  productDiscounts
+                  shippingDiscounts
+                }
+              }
+            }
+          }
+        }
+      }
+    }`;
+
+    const d = await gql<{
+      discountNodes: {
+        edges: {
+          node: {
+            id: string;
+            discount: {
+              __typename: string;
+              title: string;
+              status: string;
+              summary: string;
+              startsAt: string;
+              endsAt: string | null;
+              createdAt: string;
+              updatedAt: string;
+              codes?: { nodes: { code: string }[] };
+            };
+          };
+        }[];
+      };
+    }>(query);
+
+    return d.discountNodes.edges.map(({ node }) => {
+      const disc = node.discount;
+      const codes = disc.codes?.nodes.map((c) => c.code) ?? [];
+      return {
+        id: node.id,
+        typename: disc.__typename,
+        title: disc.title,
+        status: disc.status,
+        summary: disc.summary || "",
+        startsAt: disc.startsAt,
+        endsAt: disc.endsAt,
+        createdAt: disc.createdAt,
+        updatedAt: disc.updatedAt,
+        codes,
+      };
+    });
+  },
 };
+
+export interface ShopifyDiscountNode {
+  id: string;
+  typename: string;
+  title: string;
+  status: string;
+  summary: string;
+  startsAt: string;
+  endsAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  codes: string[];
+}

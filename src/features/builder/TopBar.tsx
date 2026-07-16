@@ -32,9 +32,13 @@ const NAV = [
   { key: "discounts", label: "Discounts", icon: Percent },
 ];
 
-export function TopBar() {
+interface TopBarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+export function TopBar({ activeTab, setActiveTab }: TopBarProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("design");
   const selectedPageId = useBuilderStore((s) => s.selectedPageId);
   const previewSource = useBuilderStore((s) => s.previewSource);
   const setPreviewSource = useBuilderStore((s) => s.setPreviewSource);

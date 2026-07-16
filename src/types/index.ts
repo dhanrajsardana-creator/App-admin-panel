@@ -190,3 +190,20 @@ export interface AuthUser {
   role?: string;
   [key: string]: unknown;
 }
+
+export interface Offer {
+  id: string;
+  title: string;
+  description: string;
+  badgeText: string;
+  shopifyDiscountId: string;
+  displayOrder: number;
+  isActive: boolean;
+  startAt: string;
+  endAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type CreateOfferPayload = Omit<Offer, "id" | "createdAt" | "updatedAt">;
+export type UpdateOfferPayload = Partial<CreateOfferPayload>;
