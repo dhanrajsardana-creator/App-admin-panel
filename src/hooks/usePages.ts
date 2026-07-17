@@ -26,6 +26,14 @@ export function usePage(pageId: string | null) {
   });
 }
 
+export function usePageByKey(pageKey: string | null) {
+  return useQuery({
+    queryKey: pageKey ? qk.pageByKey(pageKey) : ["pages", "byKey", "none"],
+    queryFn: () => pagesApi.getByKey(pageKey as string),
+    enabled: !!pageKey,
+  });
+}
+
 export function useCreatePage() {
   const qc = useQueryClient();
   return useMutation({
@@ -73,67 +81,82 @@ export function usePublishPage() {
 
   return useMutation({
     mutationFn: async (page: Page) => {
-      // ── 1. Flush any locally-queued section edits to the API ──────────────
-      const pending = flushPendingEdits();
-      // ── 2. Flush pending item actions sequentially ───────────────────────
-      const itemActions = flushPendingItemActions();
+      // Clear out the pending edits flags, since we are doing a bulk update
+      flushPendingEdits();
+      flushPendingItemActions();
 
-      try {
-        if (pending.length > 0) {
-          await Promise.all(
-            pending.map(({ id, payload }) => sectionsApi.update(id, payload))
-          );
-        }
-
-        if (itemActions.length > 0) {
-          const idMap = new Map<string, string>(); // Maps temp IDs to real IDs
-
-          for (const action of itemActions) {
-            if (action.type === 'CREATE') {
-              const created = await itemsApi.create(action.sectionId, action.payload);
-              idMap.set(action.tempId, created.id);
-            } else if (action.type === 'UPDATE') {
-              const realId = idMap.get(action.itemId) || action.itemId;
-              await itemsApi.update(realId, action.payload);
-            } else if (action.type === 'DELETE') {
-              const realId = idMap.get(action.itemId) || action.itemId;
-              await itemsApi.remove(realId);
-            } else if (action.type === 'REORDER') {
-              const mappedOrdered = action.ordered.map(o => ({
-                id: idMap.get(o.id) || o.id,
-                sortOrder: o.sortOrder
-              }));
-              await itemsApi.reorder(mappedOrdered);
-            }
-          }
-        }
-
-        // ── 3. Publish the page ───────────────────────────────────────────────
-        return await pagesApi.publish(page.id);
-      } catch (err) {
-        // Restore pending edits and item actions so they aren't lost on failure
-        const restoredEdits: Record<string, UpdateSectionPayload> = {};
-        for (const { id, payload } of pending) {
-          restoredEdits[id] = payload;
-        }
-        useBuilderStore.setState({
-          pendingEdits: {
-            ...useBuilderStore.getState().pendingEdits,
-            ...restoredEdits,
-          },
-          pendingItemActions: [
-            ...itemActions,
-            ...useBuilderStore.getState().pendingItemActions,
-          ],
-        });
-        throw err;
+      // Read the currently mutated full page tree from the react-query cache
+      const cachedPage = qc.getQueryData<Page>(qk.pageByKey(page.pageKey));
+      if (!cachedPage) {
+        throw new Error("Page data missing from cache");
       }
+
+      // We need to strip out the 'temp-' prefix from any locally created IDs
+      // so the backend knows to create them as new entities.
+        // we must clean up extraneous fields before sending
+        const payload: any = {
+          id: cachedPage.id,
+          sections: (cachedPage.sections || []).map((section) => {
+            const { id: secId, visibilityType, configJson, ...restSec } = section;
+            const isTempSec = secId.startsWith("temp-");
+            
+            // Clean up configJson
+            let cleanedConfigJson = configJson;
+            if (configJson && typeof configJson === 'object') {
+              const { theme, isDark, ...restConfig } = configJson as any;
+              cleanedConfigJson = restConfig;
+            }
+            
+            return {
+              ...restSec,
+              configJson: cleanedConfigJson,
+              ...(isTempSec ? {} : { id: secId }),
+              visibilityType: "BOTH",
+              items: (section.items || []).map((item: any) => {
+                const { id: itemId, sectionId: itemSecId, itemType, resolved, buttonText, metadataJson, ...restItem } = item;
+              const isTempItem = itemId.startsWith("temp-");
+              
+              let finalItemType = itemType;
+              if (!finalItemType) {
+                const st = section.sectionType?.toLowerCase();
+                if (st === "hero_carousel") finalItemType = "hero_full_size_photo";
+                else if (st === "category_grid") finalItemType = "category";
+                else if (st === "lookbook_grid") finalItemType = "lookbook_card";
+                else if (st === "mood_grid") finalItemType = "mood_card";
+                else if (st === "promo_hero" || st === "exlusive_offers" || st === "carousel") finalItemType = "promo_banner";
+                else if (st === "list" || st === "profile_list") finalItemType = "NAVIGATION_ITEM";
+                else finalItemType = "product";
+              }
+
+              let cleanedMetadataJson: any = {};
+              if (typeof metadataJson === 'object' && metadataJson !== null) {
+                const { dark_mode, ...restMeta } = metadataJson as any;
+                cleanedMetadataJson = restMeta;
+              }
+
+              return {
+                ...restItem,
+                ...(isTempItem ? {} : { id: itemId }),
+                ...(isTempSec ? {} : { sectionId: itemSecId }),
+                itemType: finalItemType,
+                metadataJson: cleanedMetadataJson,
+              };
+            }),
+          };
+        }),
+      };
+
+      // ── Bulk update the entire page tree ─────────────────────────────────
+      await pagesApi.bulkUpdate(page.id, payload);
+
+      // ── Publish the page ───────────────────────────────────────────────
+      return await pagesApi.publish(page.id);
     },
     onSuccess: (page) => {
       qc.invalidateQueries({ queryKey: qk.pages });
       qc.invalidateQueries({ queryKey: qk.page(page.id) });
-      // Re-fetch sections so the UI reflects the freshly-saved state.
-      qc.invalidateQueries({ queryKey: qk.sections(page.id) });
+      qc.invalidateQueries({ queryKey: qk.pageByKey(page.pageKey) });
+      qc.invalidateQueries({ queryKey: ["mobile"] });
       toast.success("Published successfully");
     },
     onError: (e: { message?: string }) =>

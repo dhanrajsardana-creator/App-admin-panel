@@ -40,7 +40,7 @@ import { useBuilderStore } from "@/store/builderStore";
 import {
   useDeleteSection,
   useReorderSections,
-  useSections,
+  usePageSections,
   useUpdateSection,
   usePatchSectionCache,
 } from "@/hooks/useSections";
@@ -206,22 +206,23 @@ function SortableSectionRow({
 }
 
 export function SectionList({ pageId }: { pageId: string }) {
-  const { data: sections, isLoading } = useSections(pageId);
+  const { data: pages } = usePages();
+  const page = pages?.find((p) => p.id === pageId) ?? null;
+
+  const { data: sections, isLoading } = usePageSections(page?.pageKey ?? null);
   const selectedSectionId = useBuilderStore((s) => s.selectedSectionId);
   const selectSection = useBuilderStore((s) => s.selectSection);
   const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
 
   const [editSection, setEditSection] = useState<Section | null>(null);
 
-  const { data: pages } = usePages();
-  const page = pages?.find((p) => p.id === pageId) ?? null;
   const isPdp = page?.pageType === "PRODUCT" && page?.pageKey !== "SEARCH_HOME";
   const isCart = page?.pageKey === "CART_PAGE";
   const isPdpOrCart = isPdp || isCart;
   const isPdpOrSearchHome = isPdp || page?.pageKey === "SEARCH_HOME";
 
   const qc = useQueryClient();
-  const patchCache = usePatchSectionCache(pageId);
+  const patchCache = usePatchSectionCache(page?.pageKey ?? null);
 
   const reorder = useReorderSections(pageId);
   const updateSection = useUpdateSection(pageId);

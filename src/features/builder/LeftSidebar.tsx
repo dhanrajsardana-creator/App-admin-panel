@@ -55,6 +55,7 @@ function CatalogSlot({
   open: boolean;
   onToggle: () => void;
   search: string;
+  confirmDiscard: () => boolean;
 }) {
   const collectionsQ = useShopifyCollections();
   const productsQ = useShopifyProducts();
@@ -97,6 +98,7 @@ function CatalogSlot({
     <div>
       <button
         onClick={() => {
+          if (!confirmDiscard()) return;
           // Show the full list screen in the preview, and expand the sublist.
           selectCatalog({ kind: indexKind });
           if (!open) onToggle();
@@ -158,15 +160,16 @@ function CatalogSlot({
                     )}
                   >
                     <button
-                      onClick={() =>
+                      onClick={() => {
+                        if (!confirmDiscard()) return;
                         selectCatalog({
                           kind,
                           id: r.id,
                           handle: r.handle,
                           title: r.title,
                           imageUrl: r.imageUrl,
-                        })
-                      }
+                        });
+                      }}
                       title={`Preview ${r.title}`}
                       className="flex min-w-0 flex-1 items-center gap-2 text-left"
                     >
@@ -324,6 +327,13 @@ export function LeftSidebar() {
   // Whether the selected page's inline sections are collapsed (hidden).
   const [sectionsHidden, setSectionsHidden] = useState(false);
 
+  const hasPendingEdits = useBuilderStore((s) => s.hasPendingEdits);
+
+  const confirmDiscard = () => {
+    if (!hasPendingEdits()) return true;
+    return window.confirm("You have unsaved changes. If you leave this page, your changes will be discarded. Are you sure you want to discard them?");
+  };
+
   // Static page dialogs
   const [spCreateOpen, setSpCreateOpen] = useState(false);
   const [spEditPage, setSpEditPage] = useState<StaticPage | null>(null);
@@ -337,9 +347,16 @@ export function LeftSidebar() {
     if (id === selectedPageId) {
       setSectionsHidden((h) => !h);
     } else {
+      if (!confirmDiscard()) return;
       selectPage(id);
       setSectionsHidden(false);
     }
+  };
+
+  const handleStaticPageClick = (id: string) => {
+    if (id === selectedStaticPageId) return;
+    if (!confirmDiscard()) return;
+    selectStaticPage(id);
   };
 
   const q = search.trim().toLowerCase();
@@ -457,6 +474,7 @@ export function LeftSidebar() {
                     open={openGroups[slot.key] ?? false}
                     onToggle={() => toggleGroup(slot.key)}
                     search={search}
+                    confirmDiscard={confirmDiscard}
                   />
                 );
               }
@@ -604,7 +622,7 @@ export function LeftSidebar() {
                         )}
                       >
                         <button
-                          onClick={() => selectStaticPage(sp.id)}
+                          onClick={() => handleStaticPageClick(sp.id)}
                           className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
                         >
                           <Circle

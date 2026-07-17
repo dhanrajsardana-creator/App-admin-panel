@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { useSections, usePatchSectionCache, useDeleteSection } from "@/hooks/useSections";
+import { usePageSections, usePatchSectionCache, useDeleteSection } from "@/hooks/useSections";
 import { usePages } from "@/hooks/usePages";
 import { useBuilderStore } from "@/store/builderStore";
 import { sectionLabel } from "@/config/sectionCatalog";
@@ -27,10 +27,10 @@ export function RightPanel() {
   const isCart = page?.pageKey === "CART_PAGE";
   const isPdpOrCart = isPdp || isCart;
 
-  const { data: sections } = useSections(selectedPageId);
+  const { data: sections } = usePageSections(page?.pageKey ?? null);
   const section = sections?.find((s) => s.id === selectedSectionId) ?? null;
 
-  const patchCache = usePatchSectionCache(selectedPageId);
+  const patchCache = usePatchSectionCache(page?.pageKey ?? null);
   const deleteSection = useDeleteSection(selectedPageId);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -114,7 +114,11 @@ export function RightPanel() {
   const config = section.configJson ?? {};
 
   // Dynamically generate field definitions for custom configuration keys not defined in the schema
-  const schemaKeys = new Set(schema.fields.map((f) => f.key));
+  const schemaKeys = new Set<string>();
+  for (const f of schema.fields) {
+    schemaKeys.add(f.key);
+    if (f.typeKey) schemaKeys.add(f.typeKey);
+  }
   const extraFields: any[] = [];
   for (const key of Object.keys(config)) {
     if (!schemaKeys.has(key)) {

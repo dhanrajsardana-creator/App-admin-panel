@@ -94,6 +94,73 @@ const REFERENCE_TYPES = [
   "URL",
 ];
 
+function RedirectFields({
+  form,
+  setForm,
+  allProducts,
+  allCollections,
+}: {
+  form: UpdateItemPayload;
+  setForm: React.Dispatch<React.SetStateAction<UpdateItemPayload>>;
+  allProducts: any[];
+  allCollections: any[];
+}) {
+  return (
+    <div className="grid gap-3 border-t pt-3 mt-1">
+      <div className="space-y-1.5">
+        <Label>Redirect Type</Label>
+        <Select
+          value={(form.redirectType as string) ?? "NONE"}
+          onValueChange={(v) => setForm((f) => ({ ...f, redirectType: v }))}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="NONE">NONE</SelectItem>
+            <SelectItem value="COLLECTION">COLLECTION</SelectItem>
+            <SelectItem value="PRODUCT">PRODUCT</SelectItem>
+            <SelectItem value="URL">URL</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Redirect Value</Label>
+        {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
+          <SearchableInput
+            value={(form.redirectValue as string) ?? ""}
+            placeholder="Search handle..."
+            options={
+              form.redirectType === "PRODUCT" 
+                ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
+                : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
+            }
+            onChange={(val) => {
+              setForm(f => {
+                const next = { ...f, redirectValue: val };
+                if (next.redirectType === "PRODUCT") {
+                  const p = allProducts?.find(p => p.handle === val);
+                  if (p) { next.referenceType = "PRODUCT"; next.referenceId = String(p.id); }
+                } else {
+                  const c = allCollections?.find(c => c.handle === val);
+                  if (c) { next.referenceType = "COLLECTION"; next.referenceId = String(c.id); }
+                }
+                return next;
+              });
+            }}
+          />
+        ) : (
+          <Input
+            value={(form.redirectValue as string) ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, redirectValue: e.target.value }))}
+            placeholder="e.g. bottoms-jeans-cargo"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface ItemFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -281,6 +348,7 @@ export function ItemFormDialog({
                 />
               </div>
             ) : null}
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
           </div>
         ) : isMoodGrid ? (
           <div className="grid gap-3">
@@ -311,6 +379,7 @@ export function ItemFormDialog({
                 />
               </div>
             ) : null}
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
           </div>
         ) : (isCategoryGrid || isExclusiveOffers || isList) ? (
           <div className="grid gap-3">
@@ -322,58 +391,7 @@ export function ItemFormDialog({
               />
             </div>
 
-            <div className="grid gap-3">
-              <div className="space-y-1.5">
-                <Label>Redirect Type</Label>
-                <Select
-                  value={(form.redirectType as string) ?? "NONE"}
-                  onValueChange={(v) => set("redirectType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">NONE</SelectItem>
-                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
-                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
-                    <SelectItem value="URL">URL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Redirect Value</Label>
-                {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
-                  <SearchableInput
-                    value={(form.redirectValue as string) ?? ""}
-                    placeholder="Search handle..."
-                    options={
-                      form.redirectType === "PRODUCT" 
-                        ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
-                        : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
-                    }
-                    onChange={(val) => {
-                      setForm(f => {
-                        const next = { ...f, redirectValue: val };
-                        if (next.redirectType === "PRODUCT") {
-                          const p = allProducts?.find(p => p.handle === val);
-                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = String(p.id); }
-                        } else {
-                          const c = allCollections?.find(c => c.handle === val);
-                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = String(c.id); }
-                        }
-                        return next;
-                      });
-                    }}
-                  />
-                ) : (
-                  <Input
-                    value={(form.redirectValue as string) ?? ""}
-                    onChange={(e) => set("redirectValue", e.target.value)}
-                    placeholder="e.g. bottoms-jeans-cargo"
-                  />
-                )}
-              </div>
-            </div>
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
             {!isList && (
               <>
                 <div className="grid gap-3">
@@ -447,58 +465,7 @@ export function ItemFormDialog({
                 placeholder="e.g. Best Sellers"
               />
             </div>
-            <div className="grid gap-3">
-              <div className="space-y-1.5">
-                <Label>Redirect Type</Label>
-                <Select
-                  value={(form.redirectType as string) ?? "NONE"}
-                  onValueChange={(v) => set("redirectType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">NONE</SelectItem>
-                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
-                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
-                    <SelectItem value="URL">URL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Redirect Value</Label>
-                {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
-                  <SearchableInput
-                    value={(form.redirectValue as string) ?? ""}
-                    placeholder="Search handle..."
-                    options={
-                      form.redirectType === "PRODUCT" 
-                        ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
-                        : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
-                    }
-                    onChange={(val) => {
-                      setForm(f => {
-                        const next = { ...f, redirectValue: val };
-                        if (next.redirectType === "PRODUCT") {
-                          const p = allProducts?.find(p => p.handle === val);
-                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = String(p.id); }
-                        } else {
-                          const c = allCollections?.find(c => c.handle === val);
-                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = String(c.id); }
-                        }
-                        return next;
-                      });
-                    }}
-                  />
-                ) : (
-                  <Input
-                    value={(form.redirectValue as string) ?? ""}
-                    onChange={(e) => set("redirectValue", e.target.value)}
-                    placeholder="e.g. tops-tshirts"
-                  />
-                )}
-              </div>
-            </div>
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
           </div>
         ) : isPromoHero ? (
           <div className="grid gap-3">
@@ -528,6 +495,7 @@ export function ItemFormDialog({
                 />
               </div>
             ) : null}
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
           </div>
         ) : (
           <div className="grid gap-3">
@@ -606,7 +574,7 @@ export function ItemFormDialog({
               </div>
             </div>
 
-
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
 
             {Object.keys(metaJson).length > 0 && (
               <MetadataFields

@@ -31,18 +31,6 @@ export function SearchableInput({
     }
   }, [value, open, options]);
 
-  // Update coordinates when opened or search changes
-  useEffect(() => {
-    if (open && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width
-      });
-    }
-  }, [open, search]);
-
   // Close on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -75,15 +63,10 @@ export function SearchableInput({
         className="w-full"
       />
       
-      {open && coords && typeof document !== 'undefined' && createPortal(
+      {open && (
         <div 
           ref={dropdownRef}
-          className="fixed z-[9999] bg-popover text-popover-foreground border shadow-md rounded-md max-h-[200px] overflow-y-auto"
-          style={{
-            top: coords.top,
-            left: coords.left,
-            width: coords.width
-          }}
+          className="absolute z-[9999] top-full left-0 mt-1 w-full bg-popover text-popover-foreground border shadow-md rounded-md max-h-[200px] overflow-y-auto"
         >
           {filtered.length === 0 ? (
             <div className="p-2 text-sm text-muted-foreground text-center">
@@ -94,7 +77,10 @@ export function SearchableInput({
               <div
                 key={opt.value}
                 className="cursor-pointer p-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                onClick={() => {
+                onMouseDown={(e) => {
+                  // Use onMouseDown instead of onClick to prevent the input from losing focus
+                  // and firing onBlur before we can capture the selection.
+                  e.preventDefault(); 
                   setSearch(opt.label);
                   onChange(opt.value);
                   setOpen(false);
@@ -104,8 +90,7 @@ export function SearchableInput({
               </div>
             ))
           )}
-        </div>,
-        document.body
+        </div>
       )}
     </div>
   );

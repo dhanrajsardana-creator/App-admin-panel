@@ -47,7 +47,7 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
             />
           ) : (
             <Input
-              value={str(config, field.key) || field.placeholder || ""}
+              value={str(config, field.key)}
               placeholder={field.placeholder}
               onChange={(e) => onChange(field.key, e.target.value)}
             />
@@ -61,7 +61,7 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
         <div className="space-y-1.5">
           <Label>{field.label}</Label>
           <Textarea
-            value={str(config, field.key) || field.placeholder || ""}
+            value={str(config, field.key)}
             placeholder={field.placeholder}
             onChange={(e) => onChange(field.key, e.target.value)}
           />

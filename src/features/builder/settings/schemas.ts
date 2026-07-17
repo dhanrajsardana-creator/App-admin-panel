@@ -82,8 +82,8 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
         { label: "COLLECTION", value: "COLLECTION" },
         { label: "PRODUCT", value: "PRODUCT" },
         { label: "URL", value: "URL" }
-      ], group: "content" },
-      { kind: "redirect_value", typeKey: "redirectType", key: "redirectValue", label: "Redirect Value", group: "content" },
+      ], group: "content", isRoot: true },
+      { kind: "redirect_value", typeKey: "redirectType", key: "redirectValue", label: "Redirect Value", group: "content", isRoot: true },
       { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
     ],
   },
@@ -111,8 +111,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   hero_carousel: {
     fields: [
       { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background image URL", group: "content" },
-      { kind: "text", key: "overlayTitle", label: "Overlay title (BEYOND)", placeholder: "BEYOND", group: "content" },
-      { kind: "text", key: "overlaySubtitle", label: "Overlay subtitle (ORDINARY)", placeholder: "ORDINARY", group: "content" },
+      { kind: "tuple_text", key: "overlayingTexts", placeholder1: "BEYOND", placeholder2: "ORDINARY", group: "content" },
     ],
   },
 
@@ -184,6 +183,8 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
       { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
       { kind: "redirect_value", typeKey: "viewAllRedirectType", key: "viewAllRedirectValue", label: "View All Redirect Value", group: "content" },
       { kind: "switch", key: "isDarkModeEnabled", label: "Dark mode", group: "style" },
+      { kind: "switch", key: "showPrice", label: "Show Price", group: "style" },
+      { kind: "number", key: "maxItems", label: "Max Items", group: "style", min: 1, max: 20 },
     ],
   },
 
@@ -199,7 +200,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   category_grid: {
     fields: [
-      { kind: "text", key: "title", label: "Section title", placeholder: "WE FEELING SMOOTH OR WILD", group: "content" },
+      { kind: "text", key: "title", label: "Section title", isRoot: true, placeholder: "ARE WE FEELING SMOOTH OR WILD?", group: "content" },
       { kind: "switch", key: "showSectionTitle", label: "Show section title", group: "style" },
       { kind: "switch", key: "showLabel", label: "Show labels", group: "style" },
       { kind: "number", key: "columns", label: "Columns", min: 2, max: 5, group: "style" },
@@ -344,6 +345,7 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
     return {
       fields: [
         { kind: "text", key: "subtitle", label: "Subtitle text", group: "content", isRoot: true },
+        { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
         { kind: "switch", key: "isViewAllButtonEnabled", label: "Enable View All Button", group: "style" },
         { kind: "text", key: "viewAllButtonText", label: "View All Button Text", group: "content" },
         { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
@@ -373,6 +375,20 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
         { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
         { kind: "switch", key: "isViewAllButtonEnabled", label: "Enable View All Button", group: "style" },
         { kind: "text", key: "viewAllButtonText", label: "View All Button Text", group: "content" },
+        { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
+        { kind: "redirect_value", typeKey: "viewAllRedirectType", key: "viewAllRedirectValue", label: "View All Redirect Value", group: "content" },
+      ],
+    };
+  }
+
+  if (sectionKey === "THE_ROTATION" || sectionKey === "LOOKBOOK_ROTATION") {
+    return {
+      fields: [
+        { kind: "tuple3_text", key: "overlayingTexts", label1: "Tagline 1", label2: "Tagline 2", label3: "Tagline 3", placeholder1: "EXPLOSIVE", placeholder2: "DRAMA", placeholder3: "STYLISH", group: "content" },
+        { kind: "text", key: "overlayingTitle", label: "Subtitle", placeholder: "POWERLOOK PRESENTS", group: "content" },
+        { kind: "text", key: "viewAllButtonText", label: "View All Button Text", placeholder: "VIEW ALL", group: "content" },
+        { kind: "select", key: "backgroundMediaType", label: "Background Media Type", options: [{ label: "IMAGE", value: "IMAGE" }, { label: "GIF", value: "GIF" }], group: "content" },
+        { kind: "media_url", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
         { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
         { kind: "redirect_value", typeKey: "viewAllRedirectType", key: "viewAllRedirectValue", label: "View All Redirect Value", group: "content" },
       ],
@@ -469,5 +485,22 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
       ],
     };
   }
+  if (sectionKey === "HOMEPAGE_EXCLUSIVE_OFFERS") {
+    return {
+      fields: [
+        { kind: "text", key: "title", label: "Section title", isRoot: true, group: "content" },
+        { kind: "text", key: "subtitle", label: "Section subtitle", isRoot: true, group: "content" },
+        { kind: "select", key: "redirectType", label: "Redirect Type", options: [
+          { label: "NONE", value: "NONE" },
+          { label: "COLLECTION", value: "COLLECTION" },
+          { label: "PRODUCT", value: "PRODUCT" },
+          { label: "URL", value: "URL" }
+        ], group: "content", isRoot: true },
+        { kind: "redirect_value", typeKey: "redirectType", key: "redirectValue", label: "Redirect Value", group: "content", isRoot: true },
+        { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
+      ],
+    };
+  }
+
   return SECTION_SCHEMAS[sectionType?.toLowerCase()] ?? { fields: [] };
 }

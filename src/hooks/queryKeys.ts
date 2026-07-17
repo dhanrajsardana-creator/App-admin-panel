@@ -1,6 +1,7 @@
 export const qk = {
   pages: ["pages"] as const,
   page: (id: string) => ["pages", id] as const,
+  pageByKey: (key: string) => ["pages", "byKey", key] as const,
   sections: (pageId: string) => ["sections", pageId] as const,
   items: (sectionId: string) => ["items", sectionId] as const,
   mobileHome: ["mobile", "home"] as const,
