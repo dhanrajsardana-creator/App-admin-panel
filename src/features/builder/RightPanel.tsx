@@ -113,66 +113,10 @@ export function RightPanel() {
   const schema = getSectionSchema(section.sectionType, section.sectionKey);
   const config = section.configJson ?? {};
 
-  // Dynamically generate field definitions for custom configuration keys not defined in the schema
-  const schemaKeys = new Set<string>();
-  for (const f of schema.fields) {
-    schemaKeys.add(f.key);
-    if (f.typeKey) schemaKeys.add(f.typeKey);
-  }
-  const extraFields: any[] = [];
-  for (const key of Object.keys(config)) {
-    if (!schemaKeys.has(key)) {
-      const val = config[key];
-      let kind = "text";
-      if (typeof val === "boolean") {
-        kind = "switch";
-      } else if (typeof val === "number") {
-        kind = "number";
-      } else if (Array.isArray(val)) {
-        kind = "tags";
-      }
-      const label = key
-        .replace(/([A-Z])/g, " $1")
-        .replace(/^./, (str) => str.toUpperCase());
-      
-      const isStyleGroup = 
-        key.toLowerCase().includes("color") || 
-        key.toLowerCase().includes("opacity") || 
-        key.toLowerCase().includes("size") ||
-        key.toLowerCase().includes("width") ||
-        key.toLowerCase().includes("gap") ||
-        key.toLowerCase().includes("margin") ||
-        key.toLowerCase().includes("padding") ||
-        key.toLowerCase().includes("border") ||
-        key.toLowerCase().includes("radius");
+  const allFields = [...schema.fields];
 
-      extraFields.push({
-        kind,
-        key,
-        label,
-        group: isStyleGroup ? "style" : "content",
-      });
-    }
-  }
-
-  const allFields = [...schema.fields, ...extraFields];
-
-  const contentFields = allFields
-    .filter((f) => f.group === "content")
-    .filter((f) => {
-      if (f.isRoot) {
-        return section[f.key as keyof typeof section] !== null && section[f.key as keyof typeof section] !== undefined;
-      }
-      return config[f.key] !== undefined;
-    });
-  const styleFields = allFields
-    .filter((f) => f.group === "style")
-    .filter((f) => {
-      if (f.isRoot) {
-        return section[f.key as keyof typeof section] !== null && section[f.key as keyof typeof section] !== undefined;
-      }
-      return config[f.key] !== undefined;
-    });
+  const contentFields = allFields.filter((f) => f.group === "content");
+  const styleFields = allFields.filter((f) => f.group === "style");
 
   return (
     <aside className="flex w-80 shrink-0 flex-col border-l bg-card">
@@ -197,23 +141,32 @@ export function RightPanel() {
       <Tabs defaultValue="content" className="flex min-h-0 flex-1 flex-col">
         <div className="px-3 pt-3">
           <TabsList className="w-full">
-            <TabsTrigger value="content">
-              <FileText /> Content
+            <TabsTrigger value="content" className="flex-1">
+               Content
             </TabsTrigger>
-            <TabsTrigger value="style">
-              <Paintbrush /> Style
-            </TabsTrigger>
-            {section.sectionType !== "exlusive_offers" && section.sectionType !== "collection_with_products" && section.sectionType?.toLowerCase() !== "input_field" && (
-              <TabsTrigger value="items">
-                <Layers /> Items
+            {styleFields.length > 0 && (
+              <TabsTrigger value="style" className="flex-1">
+                 Style
+              </TabsTrigger>
+            )}
+            {section.sectionType?.toLowerCase() !== "input_field" && (
+              <TabsTrigger value="items" className="flex-1">
+                 Items
               </TabsTrigger>
             )}
           </TabsList>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin p-4">
-          {/* CONTENT */}
           <TabsContent value="content" className="mt-0 space-y-4">
+            <div className="flex items-center justify-between rounded-md border px-3 py-2 mb-4">
+              <Label className="text-sm text-foreground">Visible</Label>
+              <Switch
+                checked={section.isVisible !== false}
+                onCheckedChange={(v) => patchField({ isVisible: v })}
+              />
+            </div>
+            
             {contentFields.length > 0 ? (
               <div className="space-y-3">
                 {contentFields.map((f) => (
@@ -232,37 +185,20 @@ export function RightPanel() {
             )}
           </TabsContent>
 
-          {/* STYLE */}
-          <TabsContent value="style" className="mt-0 space-y-3">
-            <div className="flex items-center justify-between rounded-md border px-3 py-2">
-              <Label className="text-sm text-foreground">Visible</Label>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={section.isVisible !== false}
-                  onCheckedChange={(v) => patchField({ isVisible: v })}
+          {styleFields.length > 0 && (
+            <TabsContent value="style" className="mt-0 space-y-3">
+              {styleFields.map((f) => (
+                <FieldControl
+                  key={f.key}
+                  field={f}
+                  config={f.isRoot ? (section as unknown as JsonMap) : config}
+                  onChange={f.isRoot ? (key, val) => patchField({ [key]: val }) : patchConfig}
                 />
-              </div>
-            </div>
+              ))}
+            </TabsContent>
+          )}
 
-            {styleFields.length > 0 ? (
-              <div className="space-y-3 border-t pt-3">
-                {styleFields.map((f) => (
-                  <FieldControl
-                    key={f.key}
-                    field={f}
-                    config={f.isRoot ? (section as unknown as JsonMap) : config}
-                    onChange={f.isRoot ? (key, val) => patchField({ [key]: val }) : patchConfig}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="pt-2 text-xs text-muted-foreground">
-                This section has no style options.
-              </p>
-            )}
-          </TabsContent>
-
-          {section.sectionType !== "exlusive_offers" && section.sectionType?.toLowerCase() !== "input_field" && (
+          {section.sectionType?.toLowerCase() !== "input_field" && (
             <TabsContent value="items" className="mt-0">
               <ItemManager section={section} />
             </TabsContent>

@@ -576,15 +576,6 @@ export function ItemFormDialog({
 
             <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
 
-            {Object.keys(metaJson).length > 0 && (
-              <MetadataFields
-                meta={metaJson}
-                onChange={(next) => {
-                  setMetaJson(next);
-                  setForm((f) => ({ ...f, metadataJson: next }));
-                }}
-              />
-            )}
           </div>
         )}
 
