@@ -11,6 +11,12 @@ import {
   CollectionCarouselSection,
   FeaturedCollectionSection,
   CategoryShowcaseSection,
+  CartProductSection,
+  CartBannerSection,
+  CartSummarySection,
+  CartCheckoutSection,
+  ProfileBannerSection,
+  ProfileListSection,
 } from "./ProductSections";
 import { CategoryGridSection, LookbookGridSection } from "./GridSections";
 import {
@@ -57,6 +63,12 @@ const REGISTRY: Record<string, Renderer> = {
 
   // Product family
   product_shelf: ProductShelfSection,
+  cart_product: CartProductSection,
+  cart_banner: CartBannerSection,
+  cart_summary: CartSummarySection,
+  cart_checkout: CartCheckoutSection,
+  profile_banner: ProfileBannerSection,
+  profile_list: ProfileListSection,
   category_products_shelf: ProductShelfSection,
   collection_carousel: CollectionCarouselSection,
   collection_with_products: CategoryShowcaseSection,

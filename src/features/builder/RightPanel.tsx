@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
-import { useSections, usePatchSectionCache, useDeleteSection } from "@/hooks/useSections";
+import { usePageSections, usePatchSectionCache, useDeleteSection } from "@/hooks/useSections";
 import { usePages } from "@/hooks/usePages";
 import { useBuilderStore } from "@/store/builderStore";
 import { sectionLabel } from "@/config/sectionCatalog";
@@ -24,11 +24,13 @@ export function RightPanel() {
   const { data: pages } = usePages();
   const page = pages?.find((p) => p.id === selectedPageId) ?? null;
   const isPdp = page?.pageType === "PRODUCT" && page?.pageKey !== "SEARCH_HOME";
+  const isCart = page?.pageKey === "CART_PAGE";
+  const isPdpOrCart = isPdp || isCart;
 
-  const { data: sections } = useSections(selectedPageId);
+  const { data: sections } = usePageSections(page?.pageKey ?? null);
   const section = sections?.find((s) => s.id === selectedSectionId) ?? null;
 
-  const patchCache = usePatchSectionCache(selectedPageId);
+  const patchCache = usePatchSectionCache(page?.pageKey ?? null);
   const deleteSection = useDeleteSection(selectedPageId);
 
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -74,7 +76,7 @@ export function RightPanel() {
     );
   }
 
-  if (isPdp) {
+  if (isPdpOrCart) {
     return (
       <aside className="flex w-80 shrink-0 flex-col border-l bg-card">
         {/* Header */}
@@ -99,7 +101,7 @@ export function RightPanel() {
           <div className="flex items-center justify-between rounded-md border px-3 py-2">
             <Label className="text-sm font-medium text-foreground">Visible</Label>
             <Switch
-              checked={section.isVisible}
+              checked={section.isVisible !== false}
               onCheckedChange={(v) => patchField({ isVisible: v })}
             />
           </div>
@@ -110,8 +112,11 @@ export function RightPanel() {
 
   const schema = getSectionSchema(section.sectionType, section.sectionKey);
   const config = section.configJson ?? {};
-  const contentFields = schema.fields.filter((f) => f.group === "content");
-  const styleFields = schema.fields.filter((f) => f.group === "style");
+
+  const allFields = [...schema.fields];
+
+  const contentFields = allFields.filter((f) => f.group === "content");
+  const styleFields = allFields.filter((f) => f.group === "style");
 
   return (
     <aside className="flex w-80 shrink-0 flex-col border-l bg-card">
@@ -136,23 +141,32 @@ export function RightPanel() {
       <Tabs defaultValue="content" className="flex min-h-0 flex-1 flex-col">
         <div className="px-3 pt-3">
           <TabsList className="w-full">
-            <TabsTrigger value="content">
-              <FileText /> Content
+            <TabsTrigger value="content" className="flex-1">
+               Content
             </TabsTrigger>
-            <TabsTrigger value="style">
-              <Paintbrush /> Style
-            </TabsTrigger>
-            {section.sectionType !== "exlusive_offers" && section.sectionType !== "collection_with_products" && section.sectionType?.toLowerCase() !== "input_field" && (
-              <TabsTrigger value="items">
-                <Layers /> Items
+            {styleFields.length > 0 && (
+              <TabsTrigger value="style" className="flex-1">
+                 Style
+              </TabsTrigger>
+            )}
+            {section.sectionType?.toLowerCase() !== "input_field" && (
+              <TabsTrigger value="items" className="flex-1">
+                 Items
               </TabsTrigger>
             )}
           </TabsList>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin p-4">
-          {/* CONTENT */}
           <TabsContent value="content" className="mt-0 space-y-4">
+            <div className="flex items-center justify-between rounded-md border px-3 py-2 mb-4">
+              <Label className="text-sm text-foreground">Visible</Label>
+              <Switch
+                checked={section.isVisible !== false}
+                onCheckedChange={(v) => patchField({ isVisible: v })}
+              />
+            </div>
+            
             {contentFields.length > 0 ? (
               <div className="space-y-3">
                 {contentFields.map((f) => (
@@ -171,35 +185,20 @@ export function RightPanel() {
             )}
           </TabsContent>
 
-          {/* STYLE */}
-          <TabsContent value="style" className="mt-0 space-y-3">
-            <div className="flex items-center justify-between rounded-md border px-3 py-2">
-              <Label className="text-sm text-foreground">Visible</Label>
-              <Switch
-                checked={section.isVisible}
-                onCheckedChange={(v) => patchField({ isVisible: v })}
-              />
-            </div>
+          {styleFields.length > 0 && (
+            <TabsContent value="style" className="mt-0 space-y-3">
+              {styleFields.map((f) => (
+                <FieldControl
+                  key={f.key}
+                  field={f}
+                  config={f.isRoot ? (section as unknown as JsonMap) : config}
+                  onChange={f.isRoot ? (key, val) => patchField({ [key]: val }) : patchConfig}
+                />
+              ))}
+            </TabsContent>
+          )}
 
-            {styleFields.length > 0 ? (
-              <div className="space-y-3 border-t pt-3">
-                {styleFields.map((f) => (
-                  <FieldControl
-                    key={f.key}
-                    field={f}
-                    config={f.isRoot ? (section as unknown as JsonMap) : config}
-                    onChange={f.isRoot ? (key, val) => patchField({ [key]: val }) : patchConfig}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="pt-2 text-xs text-muted-foreground">
-                This section has no style options.
-              </p>
-            )}
-          </TabsContent>
-
-          {section.sectionType !== "exlusive_offers" && section.sectionType?.toLowerCase() !== "input_field" && (
+          {section.sectionType?.toLowerCase() !== "input_field" && (
             <TabsContent value="items" className="mt-0">
               <ItemManager section={section} />
             </TabsContent>

@@ -78,7 +78,7 @@ export function PageFormDialog({
     if (upper.includes("COLLECTION")) return "COLLECTION";
     if (upper.includes("PRODUCT") || upper.includes("SEARCH_HOME")) return "PRODUCT";
     if (upper.includes("CART")) return "CART";
-    if (upper.includes("ACCOUNT")) return "ACCOUNT";
+    if (upper.includes("ACCOUNT") || upper.includes("PROFILE")) return "ACCOUNT";
     return "CUSTOM";
   };
 

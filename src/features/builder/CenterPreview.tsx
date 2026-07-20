@@ -6,7 +6,7 @@ import { FullSpinner } from "@/components/common/Spinner";
 import { cn } from "@/lib/utils";
 import { useBuilderStore } from "@/store/builderStore";
 import { usePage } from "@/hooks/usePages";
-import { useSections } from "@/hooks/useSections";
+import { usePageSections } from "@/hooks/useSections";
 import { useMobilePreview } from "@/hooks/useMobilePreview";
 import { useShopifyProducts } from "@/hooks/useShopify";
 import { ENV } from "@/config/env";
@@ -30,7 +30,7 @@ export function CenterPreview() {
 
   const { data: page } = usePage(selectedPageId);
   const { data: draftSections, isLoading: loadingDraft } =
-    useSections(selectedPageId);
+    usePageSections(page?.pageKey ?? null);
 
   const isMobileMode = previewSource === "mobile";
   const mobile = useMobilePreview(page?.pageKey ?? null, isMobileMode);

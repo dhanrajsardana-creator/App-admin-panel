@@ -50,6 +50,10 @@ export function CategoryGridSection({ section, items }: SectionRendererProps) {
 
 /** lookbook_grid — editorial image grid with overlay labels, redesigned to match Figma hero style. */
 export function LookbookGridSection({ section, items }: SectionRendererProps) {
+  if (section.sectionKey === 'THE_ROTATION' || section.sectionKey === 'LOOKBOOK_ROTATION') {
+    return <TheRotationSection section={section} items={items} />;
+  }
+
   const config = section.configJson ?? {};
   
   // Parse heading and subheading from overlayingTexts array
@@ -150,6 +154,90 @@ export function LookbookGridSection({ section, items }: SectionRendererProps) {
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function TheRotationSection({ section, items }: SectionRendererProps) {
+  const config = section.configJson ?? {};
+  const overlayingTexts = Array.isArray(config.overlayingTexts) ? config.overlayingTexts : [];
+  
+  const title = section.title || "THE ROTATION";
+  const subtitle = (config.overlayingTitle as string) || section.subtitle || "POWERLOOK PRESENTS";
+  const taglines = overlayingTexts.length > 0 ? overlayingTexts : ["EXPLOSIVE", "DRAMA", "STYLISH"];
+
+  const heroImageUrl = (config.backgroundMediaValue as string) || section.backgroundImage || "";
+  const products = items;
+
+  const DISPLAY_FONT = "'Bebas Neue', 'Oswald', sans-serif";
+
+  return (
+    <div className="bg-[#242424]">
+      {/* Hero section */}
+      {heroImageUrl && (
+        <div className="relative w-full overflow-hidden">
+          <PreviewImage src={heroImageUrl} className="h-[480px] w-full object-cover object-top" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#242424] via-[#242424]/40 to-transparent" />
+
+          <div className="absolute inset-x-0 bottom-6 flex flex-col items-center gap-1 text-center">
+            {subtitle && (
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white">
+                {subtitle}
+              </p>
+            )}
+            {title && (
+              <h2
+                className="text-[52px] uppercase leading-[0.95] text-white tracking-wide"
+                style={{ fontFamily: DISPLAY_FONT }}
+              >
+                {title}
+              </h2>
+            )}
+            {taglines.length > 0 && (
+              <div className="mt-2 flex items-center justify-center text-[#d1d1d1]">
+                {taglines.map((tag, i) => (
+                  <span key={tag} className="flex items-center text-[10px] font-medium uppercase tracking-[0.2em]">
+                    {i > 0 && <span className="mx-3 h-1 w-1 rounded-full bg-[#d1d1d1]"></span>}
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            
+            <div className="mt-6 w-full px-4">
+               <button className="flex w-full items-center justify-center gap-2 bg-white py-3.5 text-[11px] font-bold uppercase tracking-[0.1em] text-black">
+                 {config.viewAllButtonText || "VIEW ALL"} 
+                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Continue browsing products */}
+      {products.length > 0 && (
+        <div className="bg-[#242424] pb-10 pt-4">
+          <p className="mb-4 px-4 text-[12px] font-medium uppercase tracking-[0.05em] text-[#e0e0e0]">
+            CONTINUE BROWSING
+          </p>
+          <div className="no-scrollbar flex gap-4 overflow-x-auto px-4 pb-2">
+            {products.map((p, i) => (
+              <div key={p?.id ?? i} className="w-[165px] shrink-0 cursor-pointer">
+                <div className="border border-white bg-white p-[2px]">
+                   <div className="aspect-[3/4] overflow-hidden bg-zinc-100 relative">
+                     <PreviewImage src={itemImage(p)} className="absolute inset-0 h-full w-full object-cover" />
+                   </div>
+                   <div className="bg-white py-3 flex justify-center items-center">
+                     <p className="text-center text-[11px] uppercase tracking-wider text-[#a38a6d] font-medium">
+                       GET IT FOR ₹{(p as any)?.resolved?.price?.amount || '599'}
+                     </p>
+                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

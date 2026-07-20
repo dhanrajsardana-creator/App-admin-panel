@@ -94,6 +94,73 @@ const REFERENCE_TYPES = [
   "URL",
 ];
 
+function RedirectFields({
+  form,
+  setForm,
+  allProducts,
+  allCollections,
+}: {
+  form: UpdateItemPayload;
+  setForm: React.Dispatch<React.SetStateAction<UpdateItemPayload>>;
+  allProducts: any[];
+  allCollections: any[];
+}) {
+  return (
+    <div className="grid gap-3 border-t pt-3 mt-1">
+      <div className="space-y-1.5">
+        <Label>Redirect Type</Label>
+        <Select
+          value={(form.redirectType as string) ?? "NONE"}
+          onValueChange={(v) => setForm((f) => ({ ...f, redirectType: v }))}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="NONE">NONE</SelectItem>
+            <SelectItem value="COLLECTION">COLLECTION</SelectItem>
+            <SelectItem value="PRODUCT">PRODUCT</SelectItem>
+            <SelectItem value="URL">URL</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1.5">
+        <Label>Redirect Value</Label>
+        {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
+          <SearchableInput
+            value={(form.redirectValue as string) ?? ""}
+            placeholder="Search handle..."
+            options={
+              form.redirectType === "PRODUCT" 
+                ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
+                : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
+            }
+            onChange={(val) => {
+              setForm(f => {
+                const next = { ...f, redirectValue: val };
+                if (next.redirectType === "PRODUCT") {
+                  const p = allProducts?.find(p => p.handle === val);
+                  if (p) { next.referenceType = "PRODUCT"; next.referenceId = String(p.id); }
+                } else {
+                  const c = allCollections?.find(c => c.handle === val);
+                  if (c) { next.referenceType = "COLLECTION"; next.referenceId = String(c.id); }
+                }
+                return next;
+              });
+            }}
+          />
+        ) : (
+          <Input
+            value={(form.redirectValue as string) ?? ""}
+            onChange={(e) => setForm((f) => ({ ...f, redirectValue: e.target.value }))}
+            placeholder="e.g. bottoms-jeans-cargo"
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 interface ItemFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -114,11 +181,12 @@ export function ItemFormDialog({
   const isEdit = !!item;
   const createItem = useCreateItem(sectionId);
   const updateItem = useUpdateItem(sectionId);
-  const isNewDrop = sectionType === "new_drop_products";
-  const isProductShelf = sectionType === "product_shelf";
-  const isCategoryProductsShelf = sectionType === "category_products_shelf";
-  const isCarousel = sectionType === "CAROUSEL" || sectionType === "carousel";
-  const isList = sectionType === "LIST" || sectionType === "list";
+  const isNewDrop = sectionType?.toLowerCase() === "new_drop_products";
+  const isProductShelf = sectionType?.toLowerCase() === "product_shelf";
+  const isCategoryProductsShelf = sectionType?.toLowerCase() === "category_products_shelf";
+  const isCarousel = sectionType?.toLowerCase() === "carousel";
+  const isProfileList = sectionType?.toLowerCase() === "profile_list";
+  const isList = sectionType?.toLowerCase() === "list" || isProfileList;
   const { data: allProducts } = useShopifyProducts();
   const { data: allCollections } = useShopifyCollections();
 
@@ -155,7 +223,7 @@ export function ItemFormDialog({
           imageUrl: f.imageUrl || product.imageUrl,
           mobileImageUrl: f.mobileImageUrl || product.imageUrl,
           redirectType: "PRODUCT",
-          redirectValue: product.id,
+          redirectValue: String(product.id),
         }));
       }
     }
@@ -174,7 +242,7 @@ export function ItemFormDialog({
       metadataJson.backgroundMediaType = "IMAGE";
       metadataJson.backgroundMediaValue = imageVal;
     }
-    if (sectionType === "lookbook_grid" || isCarousel) {
+    if (sectionType?.toLowerCase() === "lookbook_grid" || isCarousel) {
       const titleVal = (form.title as string) || (isCarousel ? "" : "SHOP");
       const imageVal = (form.imageUrl as string) || "";
       metadataJson.overlayingTexts = [titleVal];
@@ -185,10 +253,10 @@ export function ItemFormDialog({
       ...form,
       referenceType:
         !form.referenceType || form.referenceType === "NONE" ? null : (form.referenceType as string),
-      referenceId: !form.referenceId ? null : (form.referenceId as string),
+      referenceId: !form.referenceId ? null : String(form.referenceId),
       redirectType:
         !form.redirectType || form.redirectType === "NONE" ? null : (form.redirectType as string),
-      redirectValue: !form.redirectValue ? null : (form.redirectValue as string),
+      redirectValue: !form.redirectValue ? null : String(form.redirectValue),
       metadataJson,
     };
     if (form.referenceType === "PRODUCT" && form.referenceId && allProducts) {
@@ -198,11 +266,11 @@ export function ItemFormDialog({
         payload.imageUrl = payload.imageUrl || product.imageUrl;
         payload.mobileImageUrl = payload.mobileImageUrl || product.imageUrl;
         payload.redirectType = "PRODUCT";
-        payload.redirectValue = product.id;
+        payload.redirectValue = String(product.id);
         payload.metadataJson = {
           ...(payload.metadataJson ?? {}),
           productHandle: product.handle,
-          productId: product.id,
+          productId: String(product.id),
         };
       }
     }
@@ -220,12 +288,12 @@ export function ItemFormDialog({
   };
 
   const pending = createItem.isPending || updateItem.isPending;
-  const isHeroCarousel = sectionType === "hero_carousel";
-  const isMoodGrid = sectionType === "mood_grid";
-  const isPromoHero = sectionType === "promo_hero";
-  const isCategoryGrid = sectionType === "category_grid";
-  const isExclusiveOffers = sectionType === "exlusive_offers";
-  const isLookbookGrid = sectionType === "lookbook_grid";
+  const isHeroCarousel = sectionType?.toLowerCase() === "hero_carousel";
+  const isMoodGrid = sectionType?.toLowerCase() === "mood_grid";
+  const isPromoHero = sectionType?.toLowerCase() === "promo_hero";
+  const isCategoryGrid = sectionType?.toLowerCase() === "category_grid";
+  const isExclusiveOffers = sectionType?.toLowerCase() === "exlusive_offers";
+  const isLookbookGrid = sectionType?.toLowerCase() === "lookbook_grid";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -280,6 +348,7 @@ export function ItemFormDialog({
                 />
               </div>
             ) : null}
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
           </div>
         ) : isMoodGrid ? (
           <div className="grid gap-3">
@@ -310,6 +379,7 @@ export function ItemFormDialog({
                 />
               </div>
             ) : null}
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
           </div>
         ) : (isCategoryGrid || isExclusiveOffers || isList) ? (
           <div className="grid gap-3">
@@ -321,58 +391,7 @@ export function ItemFormDialog({
               />
             </div>
 
-            <div className="grid gap-3">
-              <div className="space-y-1.5">
-                <Label>Redirect Type</Label>
-                <Select
-                  value={(form.redirectType as string) ?? "NONE"}
-                  onValueChange={(v) => set("redirectType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">NONE</SelectItem>
-                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
-                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
-                    <SelectItem value="URL">URL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Redirect Value</Label>
-                {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
-                  <SearchableInput
-                    value={(form.redirectValue as string) ?? ""}
-                    placeholder="Search handle..."
-                    options={
-                      form.redirectType === "PRODUCT" 
-                        ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
-                        : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
-                    }
-                    onChange={(val) => {
-                      setForm(f => {
-                        const next = { ...f, redirectValue: val };
-                        if (next.redirectType === "PRODUCT") {
-                          const p = allProducts?.find(p => p.handle === val);
-                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = p.id; }
-                        } else {
-                          const c = allCollections?.find(c => c.handle === val);
-                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = c.id; }
-                        }
-                        return next;
-                      });
-                    }}
-                  />
-                ) : (
-                  <Input
-                    value={(form.redirectValue as string) ?? ""}
-                    onChange={(e) => set("redirectValue", e.target.value)}
-                    placeholder="e.g. bottoms-jeans-cargo"
-                  />
-                )}
-              </div>
-            </div>
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
             {!isList && (
               <>
                 <div className="grid gap-3">
@@ -446,58 +465,7 @@ export function ItemFormDialog({
                 placeholder="e.g. Best Sellers"
               />
             </div>
-            <div className="grid gap-3">
-              <div className="space-y-1.5">
-                <Label>Redirect Type</Label>
-                <Select
-                  value={(form.redirectType as string) ?? "NONE"}
-                  onValueChange={(v) => set("redirectType", v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="NONE">NONE</SelectItem>
-                    <SelectItem value="COLLECTION">COLLECTION</SelectItem>
-                    <SelectItem value="PRODUCT">PRODUCT</SelectItem>
-                    <SelectItem value="URL">URL</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Redirect Value</Label>
-                {form.redirectType === "PRODUCT" || form.redirectType === "COLLECTION" || form.redirectType === "CATEGORY" ? (
-                  <SearchableInput
-                    value={(form.redirectValue as string) ?? ""}
-                    placeholder="Search handle..."
-                    options={
-                      form.redirectType === "PRODUCT" 
-                        ? (allProducts || []).map(p => ({ label: p.title, value: p.handle }))
-                        : (allCollections || []).map(c => ({ label: c.title, value: c.handle }))
-                    }
-                    onChange={(val) => {
-                      setForm(f => {
-                        const next = { ...f, redirectValue: val };
-                        if (next.redirectType === "PRODUCT") {
-                          const p = allProducts?.find(p => p.handle === val);
-                          if (p) { next.referenceType = "PRODUCT"; next.referenceId = p.id; }
-                        } else {
-                          const c = allCollections?.find(c => c.handle === val);
-                          if (c) { next.referenceType = "COLLECTION"; next.referenceId = c.id; }
-                        }
-                        return next;
-                      });
-                    }}
-                  />
-                ) : (
-                  <Input
-                    value={(form.redirectValue as string) ?? ""}
-                    onChange={(e) => set("redirectValue", e.target.value)}
-                    placeholder="e.g. tops-tshirts"
-                  />
-                )}
-              </div>
-            </div>
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
           </div>
         ) : isPromoHero ? (
           <div className="grid gap-3">
@@ -527,6 +495,7 @@ export function ItemFormDialog({
                 />
               </div>
             ) : null}
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
           </div>
         ) : (
           <div className="grid gap-3">
@@ -605,17 +574,8 @@ export function ItemFormDialog({
               </div>
             </div>
 
+            <RedirectFields form={form} setForm={setForm} allProducts={allProducts ?? []} allCollections={allCollections ?? []} />
 
-
-            {Object.keys(metaJson).length > 0 && (
-              <MetadataFields
-                meta={metaJson}
-                onChange={(next) => {
-                  setMetaJson(next);
-                  setForm((f) => ({ ...f, metadataJson: next }));
-                }}
-              />
-            )}
           </div>
         )}
 

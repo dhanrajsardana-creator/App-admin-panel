@@ -7,44 +7,83 @@ import { toast } from "sonner";
 import { itemsApi } from "@/api/items";
 import { qk } from "./queryKeys";
 import { useBuilderStore } from "@/store/builderStore";
-import type { SectionItem, UpdateItemPayload } from "@/types";
+import type { SectionItem, UpdateItemPayload, Page, Section } from "@/types";
 
 export function useItems(sectionId: string | null) {
-  return useQuery({
-    queryKey: sectionId ? qk.items(sectionId) : ["items", "none"],
-    queryFn: () => itemsApi.listBySection(sectionId as string),
-    enabled: !!sectionId,
+  const selectedPageId = useBuilderStore((s) => s.selectedPageId);
+  const qc = useQueryClient();
+
+  const pages = qc.getQueryData<Page[]>(qk.pages);
+  const pageKey = pages?.find(p => p.id === selectedPageId)?.pageKey;
+
+  const { data: page, isLoading, error } = useQuery({
+    queryKey: pageKey ? qk.pageByKey(pageKey) : ["pages", "byKey", "none"],
+    enabled: !!pageKey,
   });
+
+  const section = page?.sections?.find(s => s.id === sectionId);
+
+  return {
+    data: section?.items ?? [],
+    isLoading,
+    error,
+  };
 }
 
 export function usePatchItemCache(sectionId: string | null) {
   const qc = useQueryClient();
+  const selectedPageId = useBuilderStore((s) => s.selectedPageId);
+
   return (itemId: string, patch: UpdateItemPayload) => {
     if (!sectionId) return;
-    qc.setQueryData<SectionItem[]>(qk.items(sectionId), (prev) =>
-      (prev ?? []).map((it) =>
-        it.id === itemId ? ({ ...it, ...patch } as SectionItem) : it
-      )
-    );
+    const pages = qc.getQueryData<Page[]>(qk.pages);
+    const pageKey = pages?.find(p => p.id === selectedPageId)?.pageKey;
+    if (!pageKey) return;
+
+    qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        sections: (prev.sections ?? []).map(s => 
+          s.id === sectionId 
+            ? { ...s, items: (s.items ?? []).map(it => it.id === itemId ? { ...it, ...patch } as SectionItem : it) } 
+            : s
+        ),
+      };
+    });
   };
 }
 
 export function useCreateItem(sectionId: string | null) {
   const qc = useQueryClient();
+  const selectedPageId = useBuilderStore((s) => s.selectedPageId);
   const queueItemAction = useBuilderStore((s) => s.queueItemAction);
+
   return useMutation({
     mutationFn: async (payload: UpdateItemPayload) => {
       if (!sectionId) throw new Error("No section ID");
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      queueItemAction({ type: 'CREATE', sectionId, tempId, payload });
-      qc.setQueryData<SectionItem[]>(qk.items(sectionId), (prev) => [
-        ...(prev ?? []),
-        { id: tempId, sectionId, ...payload } as unknown as SectionItem,
-      ]);
-      return { id: tempId }; // Mock return since mutation success expects data sometimes
+      
+      const pages = qc.getQueryData<Page[]>(qk.pages);
+      const pageKey = pages?.find(p => p.id === selectedPageId)?.pageKey;
+      if (!pageKey) throw new Error("No pageKey found");
+
+      const newItem = { id: tempId, sectionId, ...payload } as unknown as SectionItem;
+
+      qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: (prev.sections ?? []).map(s => 
+            s.id === sectionId ? { ...s, items: [...(s.items ?? []), newItem] } : s
+          ),
+        };
+      });
+      return { id: tempId };
     },
-    onSuccess: () => {
-      toast.success("Item added locally (Publish to save)");
+    onSuccess: (data) => {
+      queueItemAction({ type: 'CREATE', sectionId: sectionId!, tempId: data.id, payload: {} as any }); // dummy to mark dirty
+      toast.success("Item added locally (Unsaved)");
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to add item"),
@@ -53,19 +92,31 @@ export function useCreateItem(sectionId: string | null) {
 
 export function useUpdateItem(sectionId: string | null) {
   const qc = useQueryClient();
+  const selectedPageId = useBuilderStore((s) => s.selectedPageId);
   const queueItemAction = useBuilderStore((s) => s.queueItemAction);
+
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: UpdateItemPayload }) => {
       if (!sectionId) throw new Error("No section ID");
-      queueItemAction({ type: 'UPDATE', sectionId, itemId: id, payload });
-      qc.setQueryData<SectionItem[]>(qk.items(sectionId), (prev) =>
-        (prev ?? []).map((it) =>
-          it.id === id ? ({ ...it, ...payload } as SectionItem) : it
-        )
-      );
+      const pages = qc.getQueryData<Page[]>(qk.pages);
+      const pageKey = pages?.find(p => p.id === selectedPageId)?.pageKey;
+      if (!pageKey) throw new Error("No pageKey found");
+
+      qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: (prev.sections ?? []).map(s => 
+            s.id === sectionId 
+              ? { ...s, items: (s.items ?? []).map(it => it.id === id ? { ...it, ...payload } as SectionItem : it) } 
+              : s
+          ),
+        };
+      });
     },
     onSuccess: () => {
-      toast.success("Item updated locally (Publish to save)");
+      queueItemAction({ type: 'UPDATE', sectionId: sectionId!, itemId: "", payload: {} as any }); // dummy to mark dirty
+      toast.success("Item updated locally (Unsaved)");
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to save item"),
@@ -76,17 +127,31 @@ export function useDeleteItem(sectionId: string | null) {
   const qc = useQueryClient();
   const queueItemAction = useBuilderStore((s) => s.queueItemAction);
   const selectItem = useBuilderStore((s) => s.selectItem);
+  const selectedPageId = useBuilderStore((s) => s.selectedPageId);
+
   return useMutation({
     mutationFn: async (id: string) => {
       if (!sectionId) throw new Error("No section ID");
-      queueItemAction({ type: 'DELETE', sectionId, itemId: id });
-      qc.setQueryData<SectionItem[]>(qk.items(sectionId), (prev) =>
-        (prev ?? []).filter((it) => it.id !== id)
-      );
+      const pages = qc.getQueryData<Page[]>(qk.pages);
+      const pageKey = pages?.find(p => p.id === selectedPageId)?.pageKey;
+      if (!pageKey) throw new Error("No pageKey found");
+
+      qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: (prev.sections ?? []).map(s => 
+            s.id === sectionId 
+              ? { ...s, items: (s.items ?? []).filter(it => it.id !== id) } 
+              : s
+          ),
+        };
+      });
     },
     onSuccess: () => {
+      queueItemAction({ type: 'DELETE', sectionId: sectionId!, itemId: "" }); // mark dirty
       selectItem(null);
-      toast.success("Item deleted locally (Publish to save)");
+      toast.success("Item deleted locally (Unsaved)");
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to delete item"),
@@ -96,19 +161,29 @@ export function useDeleteItem(sectionId: string | null) {
 export function useReorderItems(sectionId: string | null) {
   const qc = useQueryClient();
   const queueItemAction = useBuilderStore((s) => s.queueItemAction);
+  const selectedPageId = useBuilderStore((s) => s.selectedPageId);
+
   return useMutation({
     mutationFn: async (ordered: SectionItem[]) => {
       if (!sectionId) throw new Error("No section ID");
-      const mapped = ordered.map((it, i) => ({ id: it.id, sortOrder: i }));
-      queueItemAction({ type: 'REORDER', sectionId, ordered: mapped });
-      
-      qc.setQueryData<SectionItem[]>(
-        qk.items(sectionId),
-        ordered.map((it, i) => ({ ...it, sortOrder: i }))
-      );
+      const pages = qc.getQueryData<Page[]>(qk.pages);
+      const pageKey = pages?.find(p => p.id === selectedPageId)?.pageKey;
+      if (!pageKey) throw new Error("No pageKey found");
+
+      qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: (prev.sections ?? []).map(s => 
+            s.id === sectionId 
+              ? { ...s, items: ordered.map((it, i) => ({ ...it, sortOrder: i })) } 
+              : s
+          ),
+        };
+      });
     },
     onSuccess: () => {
-      // toast.success("Items reordered locally"); // Optional, might be noisy
+      queueItemAction({ type: 'REORDER', sectionId: sectionId!, ordered: [] }); // mark dirty
     },
     onError: () => {
       toast.error("Failed to reorder items");

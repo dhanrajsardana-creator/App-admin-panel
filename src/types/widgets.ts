@@ -319,6 +319,122 @@ export interface PlaceholderBlockWidget extends BaseWidget {
   }
 }
 
+export interface CartProductWidget {
+  id: string
+  widgetType: 'CART_PRODUCT'
+  order: number
+  data: {
+    title: string
+    subtitle?: string
+    overlayingTexts: string[]
+    overlayingTitle: string
+    backgroundMediaType: string
+    backgroundMediaValue: string
+  }
+  styles?: {
+    backgroundColor?: string
+    paddingTop?: number
+    paddingBottom?: number
+  }
+}
+
+export interface CartBannerWidget {
+  id: string
+  widgetType: 'CART_BANNER'
+  order: number
+  data: {
+    title: string
+    couponCode: string
+    couponBenefit: string
+    viewMoreText: string
+    viewAllText: string
+    isViewAllEnabled: boolean
+    buttonText: string
+  }
+  styles?: {
+    backgroundColor?: string
+    paddingTop?: number
+    paddingBottom?: number
+  }
+}
+
+export interface CartSummaryWidget {
+  id: string
+  widgetType: 'CART_SUMMARY'
+  order: number
+  data: {
+    title: string
+    subtotal: string
+    discount: string
+    shipping: string
+    grandTotal: string
+  }
+  styles?: {
+    backgroundColor?: string
+    paddingTop?: number
+    paddingBottom?: number
+  }
+}
+
+export interface CartCheckoutWidget {
+  id: string
+  widgetType: 'CART_CHECKOUT'
+  order: number
+  data: {
+    title: string
+    price: string
+    priceLabel: string
+    buttonText: string
+  }
+  styles?: {
+    backgroundColor?: string
+    paddingTop?: number
+    paddingBottom?: number
+  }
+}
+
+export interface ProfileBannerWidget {
+  id: string
+  widgetType: 'PROFILE_BANNER'
+  order: number
+  data: {
+    title: string
+    subtitle: string
+    logoUrl: string
+    backgroundMediaType: string
+    backgroundMediaValue: string
+  }
+  styles?: {
+    backgroundColor?: string
+    paddingTop?: number
+    paddingBottom?: number
+  }
+}
+
+export interface ProfileListItem {
+  id: string
+  title: string
+  icon?: string
+  url?: string
+}
+
+export interface ProfileListWidget {
+  id: string
+  widgetType: 'PROFILE_LIST'
+  order: number
+  data: {
+    title: string
+    subtitle?: string
+    items: ProfileListItem[]
+    moreItems?: ProfileListItem[]
+  }
+  styles?: {
+    backgroundColor?: string
+    paddingTop?: number
+    paddingBottom?: number
+  }
+}
+
 // ── Master Discriminated Union ────────────────────────────────────────────────
 
 export type UIWidget =
@@ -336,3 +452,9 @@ export type UIWidget =
   | CategoryShowcaseWidget
   | TheRotationWidget
   | ValuePropsWidget
+  | CartProductWidget
+  | CartBannerWidget
+  | CartSummaryWidget
+  | CartCheckoutWidget
+  | ProfileBannerWidget
+  | ProfileListWidget

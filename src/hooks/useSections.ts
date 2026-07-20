@@ -11,6 +11,7 @@ import type {
   CreateSectionPayload,
   Section,
   UpdateSectionPayload,
+  Page,
 } from "@/types";
 
 export function useSections(pageId: string | null) {
@@ -21,29 +22,69 @@ export function useSections(pageId: string | null) {
   });
 }
 
+import { usePageByKey } from "./usePages";
+
+export function usePageSections(pageKey: string | null) {
+  const { data: page, isLoading, error } = usePageByKey(pageKey);
+  return {
+    data: page?.sections,
+    isLoading,
+    error,
+  };
+}
+
 /** Synchronously patch a section in the cache — used for instant preview. */
-export function usePatchSectionCache(pageId: string | null) {
+export function usePatchSectionCache(pageKey: string | null) {
   const qc = useQueryClient();
   return (sectionId: string, patch: UpdateSectionPayload) => {
-    if (!pageId) return;
-    qc.setQueryData<Section[]>(qk.sections(pageId), (prev) =>
-      (prev ?? []).map((s) =>
-        s.id === sectionId ? ({ ...s, ...patch } as Section) : s
-      )
-    );
+    if (!pageKey) return;
+    qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        sections: (prev.sections ?? []).map((s) =>
+          s.id === sectionId ? ({ ...s, ...patch } as Section) : s
+        ),
+      };
+    });
   };
 }
 
 export function useCreateSection(pageId: string | null) {
   const qc = useQueryClient();
   const selectSection = useBuilderStore((s) => s.selectSection);
+  const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
+  
   return useMutation({
-    mutationFn: (payload: CreateSectionPayload) =>
-      sectionsApi.create(pageId as string, payload),
+    mutationFn: async (payload: CreateSectionPayload) => {
+      if (!pageId) throw new Error("No pageId");
+      
+      const pages = qc.getQueryData<Page[]>(qk.pages);
+      const pageKey = pages?.find(p => p.id === pageId)?.pageKey;
+      if (!pageKey) throw new Error("Could not find pageKey for pageId");
+
+      const newSection: Section = {
+        id: `temp-${crypto.randomUUID()}`,
+        ...payload,
+        items: [],
+      } as any;
+
+      qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: [...(prev.sections ?? []), newSection],
+        };
+      });
+
+      return newSection;
+    },
     onSuccess: (section) => {
-      if (pageId) qc.invalidateQueries({ queryKey: qk.sections(pageId) });
-      selectSection(section.id);
-      toast.success("Section added");
+      if (section) {
+        queueSectionEdit(section.id, { ...section }); // Mark as dirty
+        selectSection(section.id);
+        toast.success("Section added locally (Unsaved)");
+      }
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to add section"),
@@ -52,23 +93,35 @@ export function useCreateSection(pageId: string | null) {
 
 export function useUpdateSection(pageId: string | null) {
   const qc = useQueryClient();
-  const beginSave = useBuilderStore((s) => s.beginSave);
-  const endSave = useBuilderStore((s) => s.endSave);
+  const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
+  
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       payload,
     }: {
       id: string;
       payload: UpdateSectionPayload;
     }) => {
-      beginSave();
-      return sectionsApi.update(id, payload);
+      if (!pageId) throw new Error("No pageId");
+      const pages = qc.getQueryData<Page[]>(qk.pages);
+      const pageKey = pages?.find(p => p.id === pageId)?.pageKey;
+      if (!pageKey) throw new Error("Could not find pageKey for pageId");
+
+      qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: (prev.sections ?? []).map(s => 
+            s.id === id ? { ...s, ...payload } as Section : s
+          ),
+        };
+      });
+
+      return { id, payload };
     },
-    onSettled: (section) => {
-      endSave();
-      if (pageId) qc.invalidateQueries({ queryKey: qk.sections(pageId) });
-      if (section) qc.invalidateQueries({ queryKey: qk.items(section.id) });
+    onSuccess: ({ id, payload }) => {
+      queueSectionEdit(id, payload);
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to save section"),
@@ -78,12 +131,28 @@ export function useUpdateSection(pageId: string | null) {
 export function useDeleteSection(pageId: string | null) {
   const qc = useQueryClient();
   const selectSection = useBuilderStore((s) => s.selectSection);
+  const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit); // To trigger save banner
+
   return useMutation({
-    mutationFn: (id: string) => sectionsApi.remove(id),
-    onSuccess: () => {
-      if (pageId) qc.invalidateQueries({ queryKey: qk.sections(pageId) });
+    mutationFn: async (id: string) => {
+      if (!pageId) throw new Error("No pageId");
+      const pages = qc.getQueryData<Page[]>(qk.pages);
+      const pageKey = pages?.find(p => p.id === pageId)?.pageKey;
+      if (!pageKey) throw new Error("Could not find pageKey for pageId");
+
+      qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: (prev.sections ?? []).filter(s => s.id !== id),
+        };
+      });
+      return id;
+    },
+    onSuccess: (id) => {
+      queueSectionEdit(id, {}); // Trigger dirty state
       selectSection(null);
-      toast.success("Section deleted");
+      toast.success("Section deleted locally (Unsaved)");
     },
     onError: (e: { message?: string }) =>
       toast.error(e.message ?? "Failed to delete section"),
@@ -92,29 +161,33 @@ export function useDeleteSection(pageId: string | null) {
 
 export function useReorderSections(pageId: string | null) {
   const qc = useQueryClient();
+  const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
+
   return useMutation({
-    // Optimistically reorder, then persist all sortOrders.
     mutationFn: async (ordered: Section[]) => {
-      await sectionsApi.reorder(
-        ordered.map((s, i) => ({ id: s.id, sortOrder: i }))
-      );
+      if (!pageId) throw new Error("No pageId");
+      const pages = qc.getQueryData<Page[]>(qk.pages);
+      const pageKey = pages?.find(p => p.id === pageId)?.pageKey;
+      if (!pageKey) throw new Error("Could not find pageKey for pageId");
+
+      qc.setQueryData<Page>(qk.pageByKey(pageKey), (prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          sections: ordered.map((s, i) => ({ ...s, sortOrder: i })),
+        };
+      });
+      
+      return ordered;
     },
-    onMutate: async (ordered: Section[]) => {
-      if (!pageId) return;
-      await qc.cancelQueries({ queryKey: qk.sections(pageId) });
-      const prev = qc.getQueryData<Section[]>(qk.sections(pageId));
-      qc.setQueryData<Section[]>(
-        qk.sections(pageId),
-        ordered.map((s, i) => ({ ...s, sortOrder: i }))
-      );
-      return { prev };
+    onSuccess: (ordered) => {
+      // Just mark first item dirty to show banner
+      if (ordered.length > 0) {
+        queueSectionEdit(ordered[0].id, {}); 
+      }
     },
-    onError: (_e, _v, ctx) => {
-      if (pageId && ctx?.prev) qc.setQueryData(qk.sections(pageId), ctx.prev);
+    onError: () => {
       toast.error("Failed to reorder sections");
-    },
-    onSettled: () => {
-      if (pageId) qc.invalidateQueries({ queryKey: qk.sections(pageId) });
-    },
+    }
   });
 }

@@ -22,10 +22,23 @@ export const pagesApi = {
     return data.data;
   },
 
+  getByKey: async (pageKey: string): Promise<Page> => {
+    const { data } = await api.get<ApiResponse<Page>>(`/admin/pages/${pageKey}`);
+    return data.data;
+  },
+
   update: async (pageId: string, payload: UpdatePagePayload): Promise<Page> => {
     const { data } = await api.put<ApiResponse<Page>>(
       `/cms/pages/${pageId}`,
       payload
+    );
+    return data.data;
+  },
+
+  bulkUpdate: async (pageId: string, payload: Page): Promise<Page> => {
+    const { data } = await api.put<ApiResponse<Page>>(
+      `/admin/pages/${pageId}`,
+      { page: payload }
     );
     return data.data;
   },

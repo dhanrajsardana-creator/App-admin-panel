@@ -11,6 +11,12 @@
 import type { Section } from '@/types'
 import type {
   BannerWidget,
+  CartProductWidget,
+  CartBannerWidget,
+  CartSummaryWidget,
+  CartCheckoutWidget,
+  ProfileBannerWidget,
+  ProfileListWidget,
   CategoryShowcaseWidget,
   CollectionGridWidget,
   EditorialLookbookWidget,
@@ -125,6 +131,24 @@ export const bffAdapter = {
    * Returns null for unrecognised sectionKeys.
    */
   sectionToWidget: (section: Section): UIWidget | null => {
+    if (section.sectionType?.toUpperCase() === 'CART_PRODUCT' || section.sectionKey?.toUpperCase() === 'PRODUCT_CARD') {
+      return bffAdapter.toCartProduct(section)
+    }
+    if (section.sectionType?.toUpperCase() === 'CART_BANNER') {
+      return bffAdapter.toCartBanner(section)
+    }
+    if (section.sectionType?.toUpperCase() === 'CART_SUMMARY' || section.sectionKey?.toUpperCase() === 'CART_SUMMARY') {
+      return bffAdapter.toCartSummary(section)
+    }
+    if (section.sectionType?.toUpperCase() === 'CART_CHECKOUT' || section.sectionKey?.toUpperCase() === 'CART_CHECKOUT') {
+      return bffAdapter.toCartCheckout(section)
+    }
+    if (section.sectionType?.toUpperCase() === 'PROFILE_BANNER' || section.sectionKey?.toUpperCase() === 'PROFILE_BANNER') {
+      return bffAdapter.toProfileBanner(section)
+    }
+    if (section.sectionType?.toUpperCase() === 'PROFILE_LIST' || section.sectionKey?.toUpperCase() === 'PROFILE_LIST') {
+      return bffAdapter.toProfileList(section)
+    }
     switch (section.sectionKey) {
       case 'HOME_HERO_CAROUSEL':
         return bffAdapter.toHeroBanner(section)
@@ -162,6 +186,9 @@ export const bffAdapter = {
 
       case 'DEALS_SHOWCASE':
         return bffAdapter.toIrresistibleDeals(section)
+
+      case 'THE_ROTATION':
+        return bffAdapter.toTheRotation(section)
 
       default:
         console.warn(`[bffAdapter] No adapter match for sectionKey: ${section.sectionKey}`)
@@ -209,6 +236,165 @@ export const bffAdapter = {
       data: { slides, fullScreen: true, searchBar, overlay },
       styles: { backgroundColor: section.backgroundColor ?? undefined },
     } as BannerWidget
+  },
+
+  toCartProduct: (section: Section): CartProductWidget => {
+    return {
+      id: section.id || `${section.sectionKey}_${section.sortOrder}`,
+      widgetType: 'CART_PRODUCT',
+      order: section.sortOrder,
+      data: {
+        title: section.title || '',
+        subtitle: section.subtitle || '',
+        overlayingTexts: (section.configJson?.overlayingTexts as string[]) || [],
+        overlayingTitle: (section.configJson?.overlayingTitle as string) || '',
+        backgroundMediaType: (section.configJson?.backgroundMediaType as string) || 'IMAGE',
+        backgroundMediaValue: (section.configJson?.backgroundMediaValue as string) || '',
+      },
+      styles: { backgroundColor: section.backgroundColor ?? undefined },
+    }
+  },
+
+  toCartBanner: (section: Section): CartBannerWidget => {
+    return {
+      id: section.id || `${section.sectionKey}_${section.sortOrder}`,
+      widgetType: 'CART_BANNER',
+      order: section.sortOrder,
+      data: {
+        title: section.title || '',
+        couponCode: (section.configJson?.couponCode as string) || 'BOGO',
+        couponBenefit: (section.configJson?.couponBenefit as string) || 'Save ₹50',
+        viewMoreText: (section.configJson?.viewMoreText as string) || 'View More Details',
+        viewAllText: (section.configJson?.viewAllText as string) || 'VIEW ALL',
+        isViewAllEnabled: section.configJson?.isViewAllEnabled !== false,
+        buttonText: (section.configJson?.buttonText as string) || 'Apply',
+      },
+      styles: { backgroundColor: section.backgroundColor ?? undefined },
+    }
+  },
+
+  toCartSummary: (section: Section): CartSummaryWidget => {
+    return {
+      id: section.id || `${section.sectionKey}_${section.sortOrder}`,
+      widgetType: 'CART_SUMMARY',
+      order: section.sortOrder,
+      data: {
+        title: section.title || 'Order Summary',
+        subtotal: (section.configJson?.subtotal as string) || '2,799',
+        discount: (section.configJson?.discount as string) || '1,800',
+        shipping: (section.configJson?.shipping as string) || 'To Be Calculated at Checkout',
+        grandTotal: (section.configJson?.grandTotal as string) || '999',
+      },
+      styles: { backgroundColor: section.backgroundColor ?? undefined },
+    }
+  },
+
+  toCartCheckout: (section: Section): CartCheckoutWidget => {
+    return {
+      id: section.id || `${section.sectionKey}_${section.sortOrder}`,
+      widgetType: 'CART_CHECKOUT',
+      order: section.sortOrder,
+      data: {
+        title: section.title || 'Checkout',
+        price: (section.configJson?.price as string) || '999',
+        priceLabel: (section.configJson?.priceLabel as string) || 'Inc. of all taxes',
+        buttonText: (section.configJson?.buttonText as string) || 'CHECKOUT',
+      },
+      styles: { backgroundColor: section.backgroundColor ?? undefined },
+    }
+  },
+
+  toProfileBanner: (section: Section): ProfileBannerWidget => {
+    return {
+      id: section.id || `${section.sectionKey}_${section.sortOrder}`,
+      widgetType: 'PROFILE_BANNER',
+      order: section.sortOrder,
+      data: {
+        title: section.title || 'POWERLOOK',
+        subtitle: (section.configJson?.subtitle as string) || 'WELCOME TO',
+        logoUrl: (section.configJson?.logoUrl as string) || '',
+        backgroundMediaType: (section.configJson?.backgroundMediaType as string) || 'IMAGE',
+        backgroundMediaValue: (section.configJson?.backgroundMediaValue as string) || '',
+      },
+      styles: { backgroundColor: section.backgroundColor ?? undefined },
+    }
+  },
+
+  toProfileList: (section: Section): ProfileListWidget => {
+    const config = section.configJson ?? {};
+    const overlayingTexts = (config.overlayingTexts as string[]) || [];
+
+    let items: ProfileListItem[] = [];
+    let moreItems: ProfileListItem[] = [];
+
+    const sectionItems = section.items ?? [];
+
+    if (sectionItems.length > 0) {
+      if (section.subtitle && sectionItems.length > 5) {
+        const firstGroup = sectionItems.slice(0, 5);
+        const secondGroup = sectionItems.slice(5);
+        items = firstGroup.map((item) => ({
+          id: item.id,
+          title: item.title || 'Navigation Item',
+          icon: item.subtitle || '',
+          url: item.redirectValue || '',
+        }));
+        moreItems = secondGroup.map((item) => ({
+          id: item.id,
+          title: item.title || 'Navigation Item',
+          icon: item.subtitle || '',
+          url: item.redirectValue || '',
+        }));
+      } else {
+        items = sectionItems.map((item) => ({
+          id: item.id,
+          title: item.title || 'Navigation Item',
+          icon: item.subtitle || '',
+          url: item.redirectValue || '',
+        }));
+      }
+    } else if (overlayingTexts.length > 0) {
+      const firstGroup = overlayingTexts.slice(0, 5);
+      const secondGroup = overlayingTexts.slice(5);
+
+      items = firstGroup.map((text, idx) => ({
+        id: `item_1_${idx}`,
+        title: text.replace(/\b\w/g, (c) => c.toUpperCase()),
+        icon: text,
+        url: "",
+      }));
+
+      if (section.subtitle && secondGroup.length > 0) {
+        moreItems = secondGroup.map((text, idx) => ({
+          id: `item_2_${idx}`,
+          title: text.replace(/\b\w/g, (c) => c.toUpperCase()),
+          icon: text,
+          url: "",
+        }));
+      } else if (secondGroup.length > 0) {
+        items = [...items, ...secondGroup.map((text, idx) => ({
+          id: `item_1_${idx + 5}`,
+          title: text.replace(/\b\w/g, (c) => c.toUpperCase()),
+          icon: text,
+          url: "",
+        }))];
+      }
+    } else {
+      items = [];
+    }
+
+    return {
+      id: section.id || `${section.sectionKey}_${section.sortOrder}`,
+      widgetType: 'PROFILE_LIST',
+      order: section.sortOrder,
+      data: {
+        title: section.title || 'MY ACCOUNT',
+        subtitle: section.subtitle || undefined,
+        items,
+        moreItems: moreItems.length > 0 ? moreItems : undefined,
+      },
+      styles: { backgroundColor: section.backgroundColor ?? undefined },
+    };
   },
 
   toCategoryGrid: (section: Section): CollectionGridWidget => {
@@ -792,27 +978,32 @@ export const bffAdapter = {
    */
   toTheRotation: (section: Section): TheRotationWidget => {
     const items = section.items ?? []
-    const heroImageUrl = items[0]?.imageUrl || items[0]?.mobileImageUrl || undefined
+    const config = section.configJson ?? {}
+    
+    const heroImageUrl = (config.backgroundMediaValue as string) || undefined
 
-    const products = items.slice(1).map((item) => {
+    const products = items.map((item) => {
       const resolved = (item as any).resolved as any
       return {
         id: item.id,
         imageUrl: resolved?.featuredImage?.url || resolved?.images?.[0]?.url || item.imageUrl || '',
-        priceText: `₹${parseFloat(resolved?.price?.amount || '0').toFixed(0)}`,
+        priceText: `GET IT FOR ₹${parseFloat(resolved?.price?.amount || '0').toFixed(0)}`,
         action: mapBffAction(item.redirectType, item.redirectValue),
       }
     })
+
+    const overlayingTexts = Array.isArray(config.overlayingTexts) ? config.overlayingTexts : []
+    const taglines = overlayingTexts.length > 0 ? overlayingTexts : ['EXPLOSIVE', 'DRAMA', 'STYLISH']
 
     return {
       id: section.id || `${section.sectionKey}_${section.sortOrder}`,
       widgetType: 'THE_ROTATION',
       order: section.sortOrder,
       data: {
-        heroImageUrl,
-        title: section.title || '',
-        subtitle: section.subtitle || '',
-        taglines: [],
+        heroImageUrl: heroImageUrl || section.backgroundImage || undefined,
+        title: section.title || 'THE ROTATION',
+        subtitle: (config.overlayingTitle as string) || section.subtitle || 'POWERLOOK PRESENTS',
+        taglines,
         products,
         viewAllAction: mapBffAction(
           (section.configJson?.viewAllRedirectType as string) || 'COLLECTION',

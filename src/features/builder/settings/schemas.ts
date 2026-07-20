@@ -28,7 +28,7 @@ const buttonStyle: FieldDef = {
 const bannerFields: FieldDef[] = [
   { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
   { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
-  { kind: "text", key: "backgroundMediaValue", label: "Background image / media URL", group: "content" },
+  { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background image / media URL", group: "content" },
   { kind: "text", key: "buttonText", label: "Button text", group: "content" },
   textPosition,
   { kind: "color", key: "textColor", label: "Text color", group: "style" },
@@ -43,8 +43,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   featured_collection_products: {
     fields: [
       { kind: "tuple3_text", key: "overlayingTexts", label1: "Primary Heading", label2: "Secondary Heading", label3: "Badge/Offer Text", placeholder1: "THE COLLECTIVES", placeholder2: "GET THE VIBES", placeholder3: "UNDER 799 ONLY", group: "content" },
-      { kind: "select", key: "backgroundMediaType", label: "Background Media Type", options: [{ label: "IMAGE", value: "IMAGE" }, { label: "GIF", value: "GIF" }], group: "content" },
-      { kind: "text", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
       { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
       { kind: "redirect_value", typeKey: "viewAllRedirectType", key: "viewAllRedirectValue", label: "View All Redirect Value", group: "content" },
       { kind: "number", key: "columns", label: "Columns", min: 1, max: 4, group: "style" },
@@ -57,12 +56,12 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
     fields: [
       { kind: "text", key: "heading", label: "Heading text", placeholder: "YOUR PERFECT SUMMER VIBE", group: "content" },
       { kind: "text", key: "subheadingText", label: "Subheading text", placeholder: "DEALS THAT'S HARD TO RESISTS", group: "content" },
-      { kind: "text", key: "backgroundMediaValue", label: "Background image URL", placeholder: "/promo/summer-bg.png", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background image URL", placeholder: "/promo/summer-bg.png", group: "content" },
       { kind: "text", key: "card1Text", label: "Card 1 Text", placeholder: "SHOP TOPWEAR", group: "content" },
-      { kind: "text", key: "card1Image", label: "Card 1 Image URL", placeholder: "/promo/card-topwear.png", group: "content" },
+      { kind: "media_url", key: "card1Image", label: "Card 1 Image URL", placeholder: "/promo/card-topwear.png", group: "content" },
       { kind: "text", key: "card1CollectionId", label: "Card 1 Collection ID", placeholder: "e.g. 44961808", group: "content" },
       { kind: "text", key: "card2Text", label: "Card 2 Text", placeholder: "SHOP BOTTOMWEAR", group: "content" },
-      { kind: "text", key: "card2Image", label: "Card 2 Image URL", placeholder: "/promo/card-bottomwear.png", group: "content" },
+      { kind: "media_url", key: "card2Image", label: "Card 2 Image URL", placeholder: "/promo/card-bottomwear.png", group: "content" },
       { kind: "text", key: "card2CollectionId", label: "Card 2 Collection ID", placeholder: "e.g. 44961809", group: "content" },
     ],
   },
@@ -83,8 +82,8 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
         { label: "COLLECTION", value: "COLLECTION" },
         { label: "PRODUCT", value: "PRODUCT" },
         { label: "URL", value: "URL" }
-      ], group: "content" },
-      { kind: "redirect_value", typeKey: "redirectType", key: "redirectValue", label: "Redirect Value", group: "content" },
+      ], group: "content", isRoot: true },
+      { kind: "redirect_value", typeKey: "redirectType", key: "redirectValue", label: "Redirect Value", group: "content", isRoot: true },
       { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
     ],
   },
@@ -97,29 +96,28 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   category_banner: {
     fields: [
-      { kind: "text", key: "backgroundImage", label: "Background image URL", group: "content" },
+      { kind: "media_url", key: "backgroundImage", label: "Background image URL", group: "content" },
       { kind: "text", key: "productCount", label: "Product count text", group: "content" },
     ],
   },
 
   shop_the_look: {
     fields: [
-      { kind: "text", key: "backgroundImage", label: "Look image URL", group: "content" },
+      { kind: "media_url", key: "backgroundImage", label: "Look image URL", group: "content" },
       { kind: "switch", key: "showMemberPrice", label: "Show member price", group: "style" },
     ],
   },
 
   hero_carousel: {
     fields: [
-      { kind: "text", key: "backgroundMediaValue", label: "Background image URL", group: "content" },
-      { kind: "text", key: "overlayTitle", label: "Overlay title (BEYOND)", placeholder: "BEYOND", group: "content" },
-      { kind: "text", key: "overlaySubtitle", label: "Overlay subtitle (ORDINARY)", placeholder: "ORDINARY", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background image URL", group: "content" },
+      { kind: "tuple_text", key: "overlayingTexts", placeholder1: "BEYOND", placeholder2: "ORDINARY", group: "content" },
     ],
   },
 
   video_banner: {
     fields: [
-      { kind: "text", key: "backgroundMediaValue", label: "Video URL", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Video URL", group: "content" },
       { kind: "switch", key: "autoPlay", label: "Autoplay", group: "style" },
       { kind: "switch", key: "loop", label: "Loop", group: "style" },
       { kind: "switch", key: "muted", label: "Muted", group: "style" },
@@ -134,7 +132,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
       { kind: "text", key: "buttonText", label: "Button text", group: "content" },
       { kind: "switch", key: "showButton", label: "Show button", group: "style" },
       { kind: "switch", key: "showCountdown", label: "Show countdown", group: "style" },
-      { kind: "text", key: "backgroundImage", label: "Background image URL", group: "content" },
+      { kind: "media_url", key: "backgroundImage", label: "Background image URL", group: "content" },
       { kind: "color", key: "backgroundColor", label: "Background color", group: "style" },
       { kind: "color", key: "textColor", label: "Text color", group: "style" },
       { kind: "color", key: "buttonColor", label: "Button color", group: "style" },
@@ -179,13 +177,14 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
   collection_with_products: {
     fields: [
       { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
-      { kind: "select", key: "backgroundMediaType", label: "Background Media Type", options: [{ label: "Image", value: "IMAGE" }, { label: "Video", value: "VIDEO" }, { label: "GIF", value: "GIF" }], group: "content" },
-      { kind: "text", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
       { kind: "switch", key: "isViewAllButtonEnabled", label: "Enable View All Button", group: "style" },
       { kind: "text", key: "viewAllButtonText", label: "View All Button Text", group: "content" },
       { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
       { kind: "redirect_value", typeKey: "viewAllRedirectType", key: "viewAllRedirectValue", label: "View All Redirect Value", group: "content" },
       { kind: "switch", key: "isDarkModeEnabled", label: "Dark mode", group: "style" },
+      { kind: "switch", key: "showPrice", label: "Show Price", group: "style" },
+      { kind: "number", key: "maxItems", label: "Max Items", group: "style", min: 1, max: 20 },
     ],
   },
 
@@ -201,7 +200,7 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   category_grid: {
     fields: [
-      { kind: "text", key: "title", label: "Section title", placeholder: "WE FEELING SMOOTH OR WILD", group: "content" },
+      { kind: "text", key: "title", label: "Section title", isRoot: true, placeholder: "ARE WE FEELING SMOOTH OR WILD?", group: "content" },
       { kind: "switch", key: "showSectionTitle", label: "Show section title", group: "style" },
       { kind: "number", key: "columns", label: "Columns", min: 2, max: 5, group: "style" },
     ],
@@ -209,9 +208,13 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
 
   lookbook_grid: {
     fields: [
-      { kind: "tuple_text", key: "overlayingTexts", label1: "Heading", label2: "Sub-heading", placeholder1: "YOUR PERFECT SUMMER VIBE", placeholder2: "DEALS THAT'S HARD TO RESISTS", group: "content" },
+      { kind: "tuple3_text", key: "overlayingTexts", label1: "Tagline 1", label2: "Tagline 2", label3: "Tagline 3", placeholder1: "EXPLOSIVE", placeholder2: "DRAMA", placeholder3: "STYLISH", group: "content" },
+      { kind: "text", key: "overlayingTitle", label: "Subtitle", placeholder: "POWERLOOK PRESENTS", group: "content" },
+      { kind: "text", key: "viewAllButtonText", label: "View All Button Text", placeholder: "VIEW ALL", group: "content" },
       { kind: "select", key: "backgroundMediaType", label: "Background Media Type", options: [{ label: "IMAGE", value: "IMAGE" }, { label: "GIF", value: "GIF" }], group: "content" },
-      { kind: "text", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
+      { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
+      { kind: "redirect_value", typeKey: "viewAllRedirectType", key: "viewAllRedirectValue", label: "View All Redirect Value", group: "content" },
     ],
   },
 
@@ -282,6 +285,58 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
       { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
     ],
   },
+  cart_product: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
+      { kind: "cart_product_labels", key: "overlayingTexts", label: "Cart Card Labels", group: "content" },
+      { kind: "text", key: "overlayingTitle", label: "Saved Banner Text", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
+    ],
+  },
+  cart_banner: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "couponCode", label: "Coupon Code", group: "content" },
+      { kind: "text", key: "couponBenefit", label: "Coupon Benefit", group: "content" },
+      { kind: "text", key: "viewMoreText", label: "View More Text", group: "content" },
+      { kind: "text", key: "viewAllText", label: "View All Text", group: "content" },
+      { kind: "switch", key: "isViewAllEnabled", label: "Enable View All", group: "style" },
+      { kind: "text", key: "buttonText", label: "Button Text", group: "content" },
+    ],
+  },
+  cart_summary: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtotal", label: "Subtotal Value", group: "content" },
+      { kind: "text", key: "discount", label: "Discount Value", group: "content" },
+      { kind: "text", key: "shipping", label: "Shipping Text", group: "content" },
+      { kind: "text", key: "grandTotal", label: "Grand Total Value", group: "content" },
+    ],
+  },
+  cart_checkout: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "price", label: "Price Value", group: "content" },
+      { kind: "text", key: "priceLabel", label: "Price Label", group: "content" },
+      { kind: "text", key: "buttonText", label: "Button Text", group: "content" },
+    ],
+  },
+  profile_banner: {
+    fields: [
+      { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtitle", label: "Subtitle", group: "content" },
+      { kind: "media_url", key: "logoUrl", label: "Logo URL", group: "content" },
+      { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "style" },
+    ],
+  },
+  profile_list: {
+    fields: [
+      { kind: "text", key: "title", label: "Group 1 Title", group: "content", isRoot: true },
+      { kind: "text", key: "subtitle", label: "Group 2 Title (e.g. MORE)", group: "content", isRoot: true },
+      { kind: "tags", key: "overlayingTexts", label: "List Menu Items (array)", group: "content" },
+    ],
+  },
 };
 
 export function getSectionSchema(sectionType: string, sectionKey?: string): SectionSchema {
@@ -289,6 +344,7 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
     return {
       fields: [
         { kind: "text", key: "subtitle", label: "Subtitle text", group: "content", isRoot: true },
+        { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
         { kind: "switch", key: "isViewAllButtonEnabled", label: "Enable View All Button", group: "style" },
         { kind: "text", key: "viewAllButtonText", label: "View All Button Text", group: "content" },
         { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
@@ -301,8 +357,7 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
       fields: [
         { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
         { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
-        { kind: "select", key: "backgroundMediaType", label: "Background Media Type", options: [{ label: "Image", value: "IMAGE" }, { label: "Video", value: "VIDEO" }, { label: "GIF", value: "GIF" }], group: "content" },
-        { kind: "text", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
+        { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
         { kind: "switch", key: "isViewAllButtonEnabled", label: "Enable View All Button", group: "style" },
         { kind: "text", key: "viewAllButtonText", label: "View All Button Text", group: "content" },
         { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
@@ -316,10 +371,23 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
       fields: [
         { kind: "text", key: "title", label: "Title", group: "content", isRoot: true },
         { kind: "text", key: "subtitle", label: "Subtitle", group: "content", isRoot: true },
-        { kind: "select", key: "backgroundMediaType", label: "Background Media Type", options: [{ label: "Image", value: "IMAGE" }, { label: "Video", value: "VIDEO" }, { label: "GIF", value: "GIF" }], group: "content" },
-        { kind: "text", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
+        { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
         { kind: "switch", key: "isViewAllButtonEnabled", label: "Enable View All Button", group: "style" },
         { kind: "text", key: "viewAllButtonText", label: "View All Button Text", group: "content" },
+        { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
+        { kind: "redirect_value", typeKey: "viewAllRedirectType", key: "viewAllRedirectValue", label: "View All Redirect Value", group: "content" },
+      ],
+    };
+  }
+
+  if (sectionKey === "THE_ROTATION" || sectionKey === "LOOKBOOK_ROTATION") {
+    return {
+      fields: [
+        { kind: "tuple3_text", key: "overlayingTexts", label1: "Tagline 1", label2: "Tagline 2", label3: "Tagline 3", placeholder1: "EXPLOSIVE", placeholder2: "DRAMA", placeholder3: "STYLISH", group: "content" },
+        { kind: "text", key: "overlayingTitle", label: "Subtitle", placeholder: "POWERLOOK PRESENTS", group: "content" },
+        { kind: "text", key: "viewAllButtonText", label: "View All Button Text", placeholder: "VIEW ALL", group: "content" },
+        { kind: "select", key: "backgroundMediaType", label: "Background Media Type", options: [{ label: "IMAGE", value: "IMAGE" }, { label: "GIF", value: "GIF" }], group: "content" },
+        { kind: "media_url", key: "backgroundMediaValue", label: "Background Media URL", group: "content" },
         { kind: "select", key: "viewAllRedirectType", label: "View All Redirect Type", options: [{ label: "Collection", value: "COLLECTION" }, { label: "Product", value: "PRODUCT" }, { label: "URL", value: "URL" }], group: "content" },
         { kind: "redirect_value", typeKey: "viewAllRedirectType", key: "viewAllRedirectValue", label: "View All Redirect Value", group: "content" },
       ],
@@ -358,20 +426,10 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
         },
         // ── Background ──────────────────────────────────────────────────────
         {
-          kind: "select",
-          key: "backgroundMediaType",
-          label: "Background media type",
-          group: "content",
-          options: [
-            { value: "IMAGE", label: "Image" },
-            { value: "VIDEO", label: "Video" },
-          ],
-        },
-        {
-          kind: "text",
+          kind: "media_url",
           key: "backgroundMediaValue",
-          label: "Background image / video URL",
-          placeholder: "https://…",
+          typeKey: "backgroundMediaType",
+          label: "Background Media URL",
           group: "content",
         },
         // ── Overlay text ────────────────────────────────────────────────────
@@ -426,5 +484,22 @@ export function getSectionSchema(sectionType: string, sectionKey?: string): Sect
       ],
     };
   }
+  if (sectionKey === "HOMEPAGE_EXCLUSIVE_OFFERS") {
+    return {
+      fields: [
+        { kind: "text", key: "title", label: "Section title", isRoot: true, group: "content" },
+        { kind: "text", key: "subtitle", label: "Section subtitle", isRoot: true, group: "content" },
+        { kind: "select", key: "redirectType", label: "Redirect Type", options: [
+          { label: "NONE", value: "NONE" },
+          { label: "COLLECTION", value: "COLLECTION" },
+          { label: "PRODUCT", value: "PRODUCT" },
+          { label: "URL", value: "URL" }
+        ], group: "content", isRoot: true },
+        { kind: "redirect_value", typeKey: "redirectType", key: "redirectValue", label: "Redirect Value", group: "content", isRoot: true },
+        { kind: "media_url", key: "backgroundMediaValue", typeKey: "backgroundMediaType", label: "Background Media URL", group: "content" },
+      ],
+    };
+  }
+
   return SECTION_SCHEMAS[sectionType?.toLowerCase()] ?? { fields: [] };
 }

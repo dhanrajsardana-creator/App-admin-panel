@@ -323,11 +323,10 @@ export function NewDropSection({ section, items }: SectionRendererProps) {
           <button
             key={i}
             onClick={() => setActive(i)}
-            className={`h-1 rounded-full transition-all duration-300 ${
-              i === active
+            className={`h-1 rounded-full transition-all duration-300 ${i === active
                 ? "w-5 bg-zinc-800"
                 : "w-2 bg-zinc-300 hover:bg-zinc-400"
-            }`}
+              }`}
           />
         ))}
       </div>
@@ -392,9 +391,8 @@ export function ExclusiveOffersSection({ section, items }: SectionRendererProps)
           />
         )}
         <div
-          className={`absolute inset-0 transition-opacity duration-300 ${
-            offers.length === 0 ? "bg-black/5" : "bg-gradient-to-br from-zinc-800/40 to-black/60"
-          }`}
+          className={`absolute inset-0 transition-opacity duration-300 ${offers.length === 0 ? "bg-black/5" : "bg-gradient-to-br from-zinc-800/40 to-black/60"
+            }`}
         />
         {offers.length > 0 && (
           <div className="relative flex flex-col items-center gap-3 px-4 py-8">
@@ -503,36 +501,104 @@ export function ShopTheLookSection({ section, items }: SectionRendererProps) {
   const products = items.length > 1 ? items.slice(1) : items;
 
   return (
-    <div className="bg-white pb-5">
+    <div className="bg-[#fcfcfc] pb-8 relative">
       {/* Hero look image with hotspots */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-800">
-        <PreviewImage src={lookImage} className="h-full w-full" />
-        <div className="absolute inset-0 bg-black/10" />
-        <span
-          className="absolute left-4 top-4 text-[22px] uppercase leading-none text-white drop-shadow"
-          style={{ fontFamily: DISPLAY_FONT }}
-        >
-          {heading}
-        </span>
-        {/* Decorative product hotspots */}
-        <span className="absolute left-[28%] top-[42%] h-3 w-3 rounded-full border-2 border-white bg-white/30" />
-        <span className="absolute right-[26%] top-[64%] h-3 w-3 rounded-full border-2 border-white bg-white/30" />
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-200">
+        <PreviewImage src={lookImage} className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/10 to-transparent" />
+        
+        {/* Title */}
+        <div className="absolute top-6 w-full text-center">
+          <span
+            className="text-[28px] font-bold uppercase tracking-wide text-white drop-shadow-md"
+            style={{ fontFamily: DISPLAY_FONT }}
+          >
+            {heading}
+          </span>
+        </div>
+
+        {/* SVG Lines for hotspots */}
+        <svg className="absolute inset-0 h-full w-full pointer-events-none" style={{ zIndex: 10 }}>
+          {products[0] && (
+            <line x1="28%" y1="18%" x2="42%" y2="28%" stroke="#e11d48" strokeWidth="1.5" />
+          )}
+          {products[1] && (
+            <line x1="80%" y1="34%" x2="62%" y2="44%" stroke="#e11d48" strokeWidth="1.5" />
+          )}
+        </svg>
+
+        {/* Hotspots & Thumbnails */}
+        {products[0] && (
+          <>
+            <div className="absolute left-[10%] top-[10%] h-[20%] aspect-square border-[1.5px] border-red-600 bg-white z-20 overflow-hidden shadow-sm">
+              <PreviewImage src={itemImage(products[0])} className="h-full w-full object-cover" />
+            </div>
+            <div className="absolute left-[41.5%] top-[27.5%] h-1.5 w-1.5 bg-red-600 z-20 shadow-sm" />
+          </>
+        )}
+
+        {products[1] && (
+          <>
+            <div className="absolute right-[8%] top-[26%] h-[20%] aspect-square border-[1.5px] border-red-600 bg-white z-20 overflow-hidden shadow-sm">
+              <PreviewImage src={itemImage(products[1])} className="h-full w-full object-cover" />
+            </div>
+            <div className="absolute right-[61.5%] top-[43.5%] h-1.5 w-1.5 bg-red-600 z-20 shadow-sm" />
+          </>
+        )}
       </div>
 
       {/* Featured products */}
       {products.length > 0 && (
-        <div className="no-scrollbar mt-3 flex gap-3 overflow-x-auto px-3">
-          {products.map((it, i) => (
-            <div key={it?.id ?? i} className="w-36 shrink-0">
-              <ProductCard
-                badge={it?.badgeText}
-                image={itemImage(it)}
-                title={it?.title}
-                config={config}
-                dark={config.theme === "dark" || !!config.isDark}
-              />
-            </div>
-          ))}
+        <div className="mt-4 px-4 space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            {products.map((it, i) => {
+              const priceObj = (it as any)?.resolved?.price;
+              const compareObj = (it as any)?.resolved?.compareAtPrice;
+              const price = priceObj?.amount ? `₹${parseInt(priceObj.amount).toLocaleString()}` : "₹2,500";
+              const compareAtPrice = compareObj?.amount ? `₹${parseInt(compareObj.amount).toLocaleString()}` : "₹3,200";
+              
+              return (
+                <div key={it?.id ?? i} className="w-full flex flex-col cursor-pointer group">
+                  <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-100">
+                    <PreviewImage src={itemImage(it)} className="h-full w-full object-cover" />
+                    
+                    <button className="absolute right-2 top-2 h-7 w-7 flex items-center justify-center rounded-sm bg-zinc-100/90 text-zinc-600 hover:text-red-500 transition-colors">
+                      <span className="text-[14px]">♡</span>
+                    </button>
+                    
+                    <div className="absolute bottom-0 w-full bg-[#E5E5E5] py-1.5 text-center">
+                      <span className="text-[10px] font-semibold tracking-[0.1em] text-zinc-700 uppercase">
+                        BEST SELLER
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex flex-col gap-1">
+                    <p className="line-clamp-1 text-[12px] text-zinc-600 font-medium">
+                      {it?.title || "Powerlook Oversize white..."}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[12px]">
+                      <span className="font-bold text-zinc-900">{price}</span>
+                      <span className="text-zinc-400 line-through text-[11px]">{compareAtPrice}</span>
+                      <span className="text-green-600 font-medium text-[11px]">20% Off</span>
+                    </div>
+                    <div className="mt-0.5">
+                      <span className="inline-block border border-green-200 bg-green-50/50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                        Member Price : ₹690
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="pt-2">
+            <button className="w-full flex items-center justify-center gap-2 border border-zinc-200 py-3.5 text-[12px] font-medium text-zinc-800 transition-colors hover:bg-zinc-50">
+              ADD TO CART
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </button>
+          </div>
         </div>
       )}
     </div>

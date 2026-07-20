@@ -47,7 +47,7 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
             />
           ) : (
             <Input
-              value={str(config, field.key) || field.placeholder || ""}
+              value={str(config, field.key)}
               placeholder={field.placeholder}
               onChange={(e) => onChange(field.key, e.target.value)}
             />
@@ -61,7 +61,7 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
         <div className="space-y-1.5">
           <Label>{field.label}</Label>
           <Textarea
-            value={str(config, field.key) || field.placeholder || ""}
+            value={str(config, field.key)}
             placeholder={field.placeholder}
             onChange={(e) => onChange(field.key, e.target.value)}
           />
@@ -230,6 +230,50 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
       );
     }
 
+    case "cart_product_labels": {
+      const raw = config[field.key];
+      const arr = Array.isArray(raw) ? raw.map(String) : [];
+      while (arr.length < 9) {
+        arr.push("");
+      }
+
+      const labels = [
+        "Tag / Badge (e.g. SELLING FAST)",
+        "Product Title",
+        "Size Label (e.g. Size : S)",
+        "Quantity Label (e.g. 01)",
+        "Original Price (MRP)",
+        "Quantity Value (e.g. 2)",
+        "Discounted Price",
+        "Discount Percentage (e.g. 64% off)",
+        "Wishlist CTA Button Text",
+      ];
+
+      return (
+        <div className="space-y-3 border rounded-lg p-3 bg-zinc-50/50">
+          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider block">
+            {field.label}
+          </span>
+          <div className="grid gap-2.5">
+            {labels.map((lbl, idx) => (
+              <div key={idx} className="space-y-1">
+                <Label className="text-[11px] font-medium text-zinc-500">{lbl}</Label>
+                <Input
+                  value={arr[idx] || ""}
+                  onChange={(e) => {
+                    const next = [...arr];
+                    next[idx] = e.target.value;
+                    onChange(field.key, next);
+                  }}
+                  className="bg-white h-8 text-xs font-normal"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     case "tags": {
       // Read current value as string[]
       const raw = config[field.key];
@@ -266,10 +310,10 @@ export function FieldControl({ field, config, onChange }: FieldControlProps) {
           )}
           <div className="space-y-1.5">
             <Label>{field.label}</Label>
-            <Input
-              value={str(config, field.key) || field.placeholder || ""}
+            <ImageUploadInput
+              value={str(config, field.key) || ""}
               placeholder={field.placeholder || "https://..."}
-              onChange={(e) => onChange(field.key, e.target.value)}
+              onChange={(v) => onChange(field.key, v)}
             />
           </div>
         </div>

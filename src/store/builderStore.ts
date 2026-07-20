@@ -38,6 +38,8 @@ interface BuilderState {
   pdpPreviewHandle: string | null;
   /** A static app screen (wishlist/account) shown from the bottom tab bar. */
   appScreen: AppScreen;
+  /** When set, the center panel renders the static page CKEditor instead of the phone preview. */
+  selectedStaticPageId: string | null;
 
   // --- UI ---------------------------------------------------------------
   pageSearch: string;
@@ -66,6 +68,8 @@ interface BuilderState {
   setAppScreen: (screen: AppScreen) => void;
   setPageSearch: (q: string) => void;
   setPreviewSource: (s: PreviewSource) => void;
+  /** Select a static page to open in the CKEditor panel. */
+  selectStaticPage: (id: string | null) => void;
 
   /**
    * Merge `patch` into the pending edits for `sectionId`.
@@ -102,6 +106,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   catalogHistory: [],
   pdpPreviewHandle: null,
   appScreen: null,
+  selectedStaticPageId: null,
   pageSearch: "",
   previewSource: "draft",
   pendingEdits: {},
@@ -120,7 +125,23 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       catalogPreview: null,
       catalogHistory: [],
       appScreen: null,
+      // Clear static page when a regular page is picked.
+      selectedStaticPageId: null,
       // Discard unsaved edits when switching pages.
+      pendingEdits: {},
+      pendingItemActions: [],
+    }),
+
+  selectStaticPage: (id) =>
+    set({
+      selectedStaticPageId: id,
+      // Deselect everything else so only the editor is shown.
+      selectedPageId: null,
+      selectedSectionId: null,
+      selectedItemId: null,
+      catalogPreview: null,
+      catalogHistory: [],
+      appScreen: null,
       pendingEdits: {},
       pendingItemActions: [],
     }),

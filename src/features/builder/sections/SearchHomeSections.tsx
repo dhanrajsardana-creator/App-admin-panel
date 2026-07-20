@@ -144,7 +144,7 @@ export function SaleSection({ section, items }: SectionRendererProps) {
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
         {promoBanners.map((banner) => {
           const title = banner.title || "";
-          const bgImage = banner.metadataJson?.backgroundMediaValue || banner.imageUrl || "";
+          const bgImage = (banner.metadataJson?.backgroundMediaValue as string) || banner.imageUrl || "";
           return (
             <div
               key={banner.id}

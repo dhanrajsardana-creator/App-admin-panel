@@ -32,15 +32,20 @@ const NAV = [
   { key: "discounts", label: "Discounts", icon: Percent },
 ];
 
-export function TopBar() {
+interface TopBarProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+}
+
+export function TopBar({ activeTab, setActiveTab }: TopBarProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("design");
   const selectedPageId = useBuilderStore((s) => s.selectedPageId);
   const previewSource = useBuilderStore((s) => s.previewSource);
   const setPreviewSource = useBuilderStore((s) => s.setPreviewSource);
   const pendingEdits = useBuilderStore((s) => s.pendingEdits);
+  const pendingItemActions = useBuilderStore((s) => s.pendingItemActions);
 
-  const hasChanges = Object.keys(pendingEdits).length > 0;
+  const hasChanges = Object.keys(pendingEdits).length > 0 || pendingItemActions.length > 0;
 
   const { data: page } = usePage(selectedPageId);
   const publish = usePublishPage();

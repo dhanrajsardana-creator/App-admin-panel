@@ -11,6 +11,7 @@ import {
   Trash2,
   Circle,
   Copy,
+  Globe,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,10 +32,13 @@ import { ENV } from "@/config/env";
 import { useDeletePage, usePages } from "@/hooks/usePages";
 import { useShopifyCollections, useShopifyProducts } from "@/hooks/useShopify";
 import { useBuilderStore } from "@/store/builderStore";
+import { useStaticPages, useDeleteStaticPage } from "@/hooks/useStaticPages";
 import { SectionList } from "./SectionList";
 import { PageFormDialog } from "./PageFormDialog";
 import { PreviewImage } from "./sections/primitives";
+import { StaticPageFormDialog } from "@/features/staticPages/StaticPageFormDialog";
 import type { Page, PageType } from "@/types";
+import type { StaticPage } from "@/types/staticPages";
 
 /** Expandable list of live Shopify collections/products under a system slot. */
 function CatalogSlot({
@@ -51,6 +55,7 @@ function CatalogSlot({
   open: boolean;
   onToggle: () => void;
   search: string;
+  confirmDiscard: () => boolean;
 }) {
   const collectionsQ = useShopifyCollections();
   const productsQ = useShopifyProducts();
@@ -93,6 +98,7 @@ function CatalogSlot({
     <div>
       <button
         onClick={() => {
+          if (!confirmDiscard()) return;
           // Show the full list screen in the preview, and expand the sublist.
           selectCatalog({ kind: indexKind });
           if (!open) onToggle();
@@ -154,15 +160,16 @@ function CatalogSlot({
                     )}
                   >
                     <button
-                      onClick={() =>
+                      onClick={() => {
+                        if (!confirmDiscard()) return;
                         selectCatalog({
                           kind,
                           id: r.id,
                           handle: r.handle,
                           title: r.title,
                           imageUrl: r.imageUrl,
-                        })
-                      }
+                        });
+                      }}
                       title={`Preview ${r.title}`}
                       className="flex min-w-0 flex-1 items-center gap-2 text-left"
                     >
@@ -299,14 +306,19 @@ export function LeftSidebar() {
   const { data: pages, isLoading } = usePages();
   const selectedPageId = useBuilderStore((s) => s.selectedPageId);
   const selectPage = useBuilderStore((s) => s.selectPage);
+  const selectedStaticPageId = useBuilderStore((s) => s.selectedStaticPageId);
+  const selectStaticPage = useBuilderStore((s) => s.selectStaticPage);
   const search = useBuilderStore((s) => s.pageSearch);
   const setSearch = useBuilderStore((s) => s.setPageSearch);
 
   const deletePage = useDeletePage();
+  const { data: staticPages, isLoading: staticPagesLoading } = useStaticPages();
+  const deleteStaticPage = useDeleteStaticPage();
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     custom: true,
     others: true,
+    staticPages: true,
   });
   const [createOpen, setCreateOpen] = useState(false);
   const [createType, setCreateType] = useState<PageType>("CUSTOM");
@@ -314,6 +326,18 @@ export function LeftSidebar() {
   const [pendingDelete, setPendingDelete] = useState<Page | null>(null);
   // Whether the selected page's inline sections are collapsed (hidden).
   const [sectionsHidden, setSectionsHidden] = useState(false);
+
+  const hasPendingEdits = useBuilderStore((s) => s.hasPendingEdits);
+
+  const confirmDiscard = () => {
+    if (!hasPendingEdits()) return true;
+    return window.confirm("You have unsaved changes. If you leave this page, your changes will be discarded. Are you sure you want to discard them?");
+  };
+
+  // Static page dialogs
+  const [spCreateOpen, setSpCreateOpen] = useState(false);
+  const [spEditPage, setSpEditPage] = useState<StaticPage | null>(null);
+  const [spPendingDelete, setSpPendingDelete] = useState<StaticPage | null>(null);
 
   const toggleGroup = (key: string) =>
     setOpenGroups((g) => ({ ...g, [key]: !g[key] }));
@@ -323,9 +347,16 @@ export function LeftSidebar() {
     if (id === selectedPageId) {
       setSectionsHidden((h) => !h);
     } else {
+      if (!confirmDiscard()) return;
       selectPage(id);
       setSectionsHidden(false);
     }
+  };
+
+  const handleStaticPageClick = (id: string) => {
+    if (id === selectedStaticPageId) return;
+    if (!confirmDiscard()) return;
+    selectStaticPage(id);
   };
 
   const q = search.trim().toLowerCase();
@@ -343,7 +374,7 @@ export function LeftSidebar() {
     if (key.includes("COLLECTION")) return "COLLECTION";
     if (key.includes("PRODUCT") || key === "SEARCH_HOME") return "PRODUCT";
     if (key.includes("CART")) return "CART";
-    if (key.includes("ACCOUNT")) return "ACCOUNT";
+    if (key.includes("ACCOUNT") || key.includes("PROFILE")) return "ACCOUNT";
     return p.pageType;
   };
 
@@ -443,6 +474,7 @@ export function LeftSidebar() {
                     open={openGroups[slot.key] ?? false}
                     onToggle={() => toggleGroup(slot.key)}
                     search={search}
+                    confirmDiscard={confirmDiscard}
                   />
                 );
               }
@@ -558,6 +590,82 @@ export function LeftSidebar() {
               </div>
             )}
 
+            {/* Static pages group */}
+            <GroupHeader
+              icon={Globe}
+              label="Static pages"
+              count={staticPages?.length ?? 0}
+              open={openGroups.staticPages ?? true}
+              onToggle={() => toggleGroup("staticPages")}
+            />
+            {openGroups.staticPages && (
+              <div className="ml-3 space-y-0.5 border-l pl-2">
+                {staticPagesLoading ? (
+                  <div className="flex items-center gap-2 px-2 py-2 text-xs text-muted-foreground">
+                    <Spinner /> Loading…
+                  </div>
+                ) : !staticPages || staticPages.length === 0 ? (
+                  <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                    No static pages
+                  </p>
+                ) : (
+                  staticPages.map((sp) => {
+                    const active = sp.id === selectedStaticPageId;
+                    return (
+                      <div
+                        key={sp.id}
+                        className={cn(
+                          "group flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors",
+                          active
+                            ? "bg-primary/10 font-medium text-primary"
+                            : "hover:bg-accent"
+                        )}
+                      >
+                        <button
+                          onClick={() => handleStaticPageClick(sp.id)}
+                          className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
+                        >
+                          <Circle
+                            className={cn(
+                              "h-2 w-2 shrink-0",
+                              sp.status === "PUBLISHED"
+                                ? "fill-emerald-500 text-emerald-500"
+                                : "fill-amber-400 text-amber-400"
+                            )}
+                          />
+                          <span className="truncate">{sp.title}</span>
+                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="rounded p-0.5 opacity-0 hover:bg-background group-hover:opacity-100">
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setSpEditPage(sp)}>
+                              <Pencil className="h-4 w-4" /> Edit settings
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setSpPendingDelete(sp)}
+                            >
+                              <Trash2 className="h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    );
+                  })
+                )}
+                <button
+                  onClick={() => setSpCreateOpen(true)}
+                  className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" /> New static page
+                </button>
+              </div>
+            )}
+
             {/* Others group (page types without a dedicated slot, e.g. CATEGORY) */}
             {otherPages.length > 0 && (
               <>
@@ -632,6 +740,37 @@ export function LeftSidebar() {
             onSuccess: () => {
               if (pendingDelete.id === selectedPageId) selectPage(null);
               setPendingDelete(null);
+            },
+          })
+        }
+      />
+
+      {/* Static pages dialogs */}
+      <StaticPageFormDialog
+        open={spCreateOpen}
+        onOpenChange={setSpCreateOpen}
+        onCreated={(sp) => selectStaticPage(sp.id)}
+      />
+      <StaticPageFormDialog
+        open={!!spEditPage}
+        onOpenChange={(o) => !o && setSpEditPage(null)}
+        page={spEditPage}
+      />
+      <ConfirmDialog
+        open={!!spPendingDelete}
+        onOpenChange={(o) => !o && setSpPendingDelete(null)}
+        title="Delete static page?"
+        description={`"${spPendingDelete?.title}" will be permanently removed.`}
+        destructive
+        confirmLabel="Delete"
+        loading={deleteStaticPage.isPending}
+        onConfirm={() =>
+          spPendingDelete &&
+          deleteStaticPage.mutate(spPendingDelete.id, {
+            onSuccess: () => {
+              if (spPendingDelete.id === selectedStaticPageId)
+                selectStaticPage(null);
+              setSpPendingDelete(null);
             },
           })
         }

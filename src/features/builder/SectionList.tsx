@@ -26,6 +26,7 @@ import {
   Code2,
   FolderOpen,
   Package,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
@@ -39,7 +40,7 @@ import { useBuilderStore } from "@/store/builderStore";
 import {
   useDeleteSection,
   useReorderSections,
-  useSections,
+  usePageSections,
   useUpdateSection,
   usePatchSectionCache,
 } from "@/hooks/useSections";
@@ -104,6 +105,7 @@ function SortableSectionRow({
   onSelect,
   onToggleVisible,
   onDelete,
+  onEdit,
   isPdp,
 }: {
   section: Section;
@@ -113,6 +115,7 @@ function SortableSectionRow({
   onSelect: () => void;
   onToggleVisible: () => void;
   onDelete: () => void;
+  onEdit: () => void;
   isPdp?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -135,7 +138,7 @@ function SortableSectionRow({
         selected
           ? "border-primary bg-primary/5"
           : "border-transparent hover:border-border hover:bg-accent",
-        !section.isVisible && "opacity-60"
+        section.isVisible === false && "opacity-60"
       )}
     >
       <div className="flex items-center gap-1">
@@ -166,22 +169,34 @@ function SortableSectionRow({
         <button
           onClick={onToggleVisible}
           className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-          title={section.isVisible ? "Hide section" : "Show section"}
+          title={section.isVisible !== false ? "Hide section" : "Show section"}
         >
-          {section.isVisible ? (
+          {section.isVisible !== false ? (
             <Eye className="h-4 w-4" />
           ) : (
             <EyeOff className="h-4 w-4" />
           )}
         </button>
         {!isPdp && (
-          <button
-            onClick={onDelete}
-            className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-            title="Delete section"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+              title="Edit section settings"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+              title="Delete section"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </>
         )}
       </div>
 
@@ -191,18 +206,23 @@ function SortableSectionRow({
 }
 
 export function SectionList({ pageId }: { pageId: string }) {
-  const { data: sections, isLoading } = useSections(pageId);
+  const { data: pages } = usePages();
+  const page = pages?.find((p) => p.id === pageId) ?? null;
+
+  const { data: sections, isLoading } = usePageSections(page?.pageKey ?? null);
   const selectedSectionId = useBuilderStore((s) => s.selectedSectionId);
   const selectSection = useBuilderStore((s) => s.selectSection);
   const queueSectionEdit = useBuilderStore((s) => s.queueSectionEdit);
 
-  const { data: pages } = usePages();
-  const page = pages?.find((p) => p.id === pageId) ?? null;
+  const [editSection, setEditSection] = useState<Section | null>(null);
+
   const isPdp = page?.pageType === "PRODUCT" && page?.pageKey !== "SEARCH_HOME";
+  const isCart = page?.pageKey === "CART_PAGE";
+  const isPdpOrCart = isPdp || isCart;
   const isPdpOrSearchHome = isPdp || page?.pageKey === "SEARCH_HOME";
 
   const qc = useQueryClient();
-  const patchCache = usePatchSectionCache(pageId);
+  const patchCache = usePatchSectionCache(page?.pageKey ?? null);
 
   const reorder = useReorderSections(pageId);
   const updateSection = useUpdateSection(pageId);
@@ -253,7 +273,7 @@ export function SectionList({ pageId }: { pageId: string }) {
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Sections {localOrder.length > 0 && `(${localOrder.length})`}
         </h3>
-        {!isPdp && (
+        {!isPdpOrCart && (
           <Button
             size="icon-sm"
             variant="ghost"
@@ -273,7 +293,7 @@ export function SectionList({ pageId }: { pageId: string }) {
         ) : localOrder.length === 0 ? (
           <div className="rounded-lg border border-dashed p-6 text-center">
             <p className="text-sm text-muted-foreground">No sections yet.</p>
-            {!isPdp && (
+            {!isPdpOrCart && (
               <Button
                 size="sm"
                 variant="outline"
@@ -305,18 +325,19 @@ export function SectionList({ pageId }: { pageId: string }) {
                   onSelect={() => selectSection(section.id)}
                   onToggleVisible={() => {
                     if (isPdpOrSearchHome) {
-                      const nextVisible = !section.isVisible;
+                      const nextVisible = section.isVisible === false ? true : false;
                       patchCache(section.id, { isVisible: nextVisible });
                       queueSectionEdit(section.id, { isVisible: nextVisible });
                     } else {
                       updateSection.mutate({
                         id: section.id,
-                        payload: { isVisible: !section.isVisible },
+                        payload: { isVisible: section.isVisible === false ? true : false },
                       });
                     }
                   }}
                   onDelete={() => setPendingDelete(section)}
-                  isPdp={isPdp}
+                  onEdit={() => setEditSection(section)}
+                  isPdp={isPdpOrCart}
                 />
               ))}
             </SortableContext>
@@ -324,7 +345,7 @@ export function SectionList({ pageId }: { pageId: string }) {
         )}
       </div>
 
-      {!isPdp && (
+      {!isPdpOrCart && (
         <Button
           variant="outline"
           size="sm"
@@ -340,6 +361,14 @@ export function SectionList({ pageId }: { pageId: string }) {
         onOpenChange={setAddOpen}
         pageId={pageId}
         existingCount={localOrder.length}
+      />
+
+      <AddSectionDialog
+        open={!!editSection}
+        onOpenChange={(o) => !o && setEditSection(null)}
+        pageId={pageId}
+        existingCount={localOrder.length}
+        section={editSection}
       />
 
       <ConfirmDialog

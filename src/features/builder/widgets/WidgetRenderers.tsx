@@ -6,10 +6,36 @@
  * produced by the bffAdapter — the same data structure the mobile app renders.
  */
 import React, { useState, useRef, useEffect } from "react";
-import { Search, ArrowRight, Truck, Clock, Heart, ChevronRight } from "lucide-react";
+import {
+  Search,
+  ArrowRight,
+  Truck,
+  Clock,
+  Heart,
+  ChevronRight,
+  Sparkles,
+  Trash2,
+  Plus,
+  Minus,
+  User,
+  MapPin,
+  History,
+  Wallet,
+  Phone,
+  Shield,
+  Box,
+  RotateCcw,
+  ArrowLeftRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
   BannerWidget,
+  CartProductWidget,
+  CartBannerWidget,
+  CartSummaryWidget,
+  CartCheckoutWidget,
+  ProfileBannerWidget,
+  ProfileListWidget,
   ProductGridWidget,
   CollectionGridWidget,
   NewDropWidget,
@@ -812,6 +838,7 @@ export function IrresistibleDealsWidget_({ widget }: { widget: IrresistibleDeals
 // ── 11. Category Showcase ─────────────────────────────────────────────────────
 
 export function CategoryShowcaseWidget_({ widget }: { widget: CategoryShowcaseWidget }) {
+  const { data } = widget;
   const { categoryName, productCountText, bannerImageUrl, products, viewAllAction, buttonText } = data;
 
   // Map fallback banner image based on title
@@ -875,7 +902,7 @@ export function CategoryShowcaseWidget_({ widget }: { widget: CategoryShowcaseWi
       {/* Horizontal product cards */}
       {products.length > 0 && (
         <div className="no-scrollbar flex gap-3 overflow-x-auto px-5 py-5 bg-[#121212]">
-          {products.map((p) => (
+          {products.map((p: WidgetProductItem) => (
             <ProductCard key={p.id} item={p} width={150} theme="dark" />
           ))}
         </div>
@@ -992,17 +1019,21 @@ export function TheRotationWidget_({ widget }: { widget: TheRotationWidget }) {
 
       {/* Continue browsing products */}
       {products.length > 0 && (
-        <div className="bg-zinc-800 py-4">
-          <p className="mb-3 px-4 text-[9px] font-semibold uppercase tracking-[0.15em] text-zinc-400">
+        <div className="bg-zinc-900 pb-8 pt-4">
+          <p className="mb-4 px-4 text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-300">
             Continue Browsing
           </p>
           <div className="no-scrollbar flex gap-3 overflow-x-auto px-4">
             {products.map((p) => (
-              <div key={p.id} className="w-[120px] shrink-0 cursor-pointer">
-                <div className="aspect-[3/4] overflow-hidden rounded-sm bg-zinc-700">
+              <div key={p.id} className="w-[150px] shrink-0 cursor-pointer bg-white">
+                <div className="aspect-[3/4] overflow-hidden bg-zinc-100">
                   <Img src={p.imageUrl} alt={p.priceText} />
                 </div>
-                <p className="mt-1 text-center text-[10px] text-zinc-400">{p.priceText}</p>
+                <div className="py-3 flex justify-center items-center">
+                  <p className="text-center text-[11px] uppercase leading-tight text-zinc-800 font-bold">
+                    {p.priceText}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -1029,6 +1060,399 @@ export function FallbackWidget({ sectionKey }: { sectionKey?: string }) {
   );
 }
 
+// ── Cart Product ──────────────────────────────────────────────────────────────
+
+export function CartProductWidget_({ widget }: { widget: CartProductWidget }) {
+  const { title, overlayingTexts, overlayingTitle, backgroundMediaValue } = widget.data;
+
+  const badge = overlayingTexts[0] || "";
+  const productTitle = overlayingTexts[1] || "";
+  const sizeText = overlayingTexts[2] || "Size : S";
+  const qtyText = overlayingTexts[3] || "01";
+  const originalPrice = overlayingTexts[4] || "";
+  const finalPrice = overlayingTexts[6] || "";
+  const discountText = overlayingTexts[7] || "";
+  const wishlistText = overlayingTexts[8] || "MOVE TO WISHLIST";
+
+  const savedAmt = originalPrice && finalPrice ? (Number(originalPrice) - Number(finalPrice)) : 299;
+  const formattedSavedAmt = savedAmt > 0 ? `₹${savedAmt}` : "₹299";
+  const titleBannerText = overlayingTitle 
+    ? overlayingTitle.replace("{price}", formattedSavedAmt)
+    : `Congratulations!! You have saved ${formattedSavedAmt} on your order`;
+
+  return (
+    <div className="flex flex-col bg-white">
+      {/* 1. Green Saved Banner */}
+      {overlayingTitle && (
+        <div className="flex items-center gap-1.5 bg-emerald-500/10 px-4 py-2.5 text-[10px] font-semibold text-emerald-600 border-b border-emerald-500/10">
+          <Sparkles className="h-3.5 w-3.5 fill-emerald-500 text-emerald-500 shrink-0" />
+          <span>{titleBannerText}</span>
+        </div>
+      )}
+
+      {/* 2. Shopping Bag Title Section */}
+      <div className="px-4 py-3 border-b">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-950 font-sans">
+          {title ? title.toUpperCase() : "SHOPPING BAG (1)"}
+        </h2>
+      </div>
+
+      {/* 3. Product Card Row */}
+      <div className="flex gap-4 p-4 border-b">
+        {/* Left: Product Image */}
+        <div className="w-[110px] h-[150px] relative overflow-hidden rounded bg-zinc-100 shrink-0">
+          {backgroundMediaValue ? (
+            <img
+              src={backgroundMediaValue}
+              alt={productTitle}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-zinc-200 text-zinc-400 text-xs">
+              No Image
+            </div>
+          )}
+        </div>
+
+        {/* Right: Product Details */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+          <div>
+            {/* Top row: Badge and Trash Icon */}
+            <div className="flex items-start justify-between gap-2">
+              {badge && (
+                <span className="rounded bg-zinc-100 px-2 py-0.5 text-[9px] font-semibold tracking-wide uppercase text-zinc-600">
+                  {badge}
+                </span>
+              )}
+              <button className="text-zinc-400 hover:text-rose-500 ml-auto shrink-0 transition-colors">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </button>
+            </div>
+
+            {/* Product Title */}
+            <h3 className="mt-1 text-[11px] font-bold text-zinc-800 uppercase tracking-wide truncate">
+              {productTitle || "Product Title"}
+            </h3>
+
+            {/* Selects: Size & Quantity */}
+            <div className="mt-2.5 flex items-center gap-2">
+              <div className="flex items-center gap-1 border border-zinc-200 rounded px-2 py-1 text-[10px] text-zinc-600 bg-zinc-50 cursor-pointer hover:bg-zinc-100 transition-colors font-medium">
+                <span>{sizeText}</span>
+                <span className="text-[8px] text-zinc-400">▼</span>
+              </div>
+
+              <div className="flex items-center border border-zinc-200 rounded text-[10px] bg-zinc-50 font-medium">
+                <button className="px-2 py-1 border-r hover:bg-zinc-100 transition-colors text-zinc-400">
+                  <Minus className="h-2.5 w-2.5" />
+                </button>
+                <span className="px-2.5 text-zinc-700">{qtyText}</span>
+                <button className="px-2 py-1 border-l hover:bg-zinc-100 transition-colors text-zinc-400">
+                  <Plus className="h-2.5 w-2.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            {/* Price section */}
+            <div className="mt-3 flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-xs font-extrabold text-zinc-950">
+                ₹{finalPrice || "799"}
+              </span>
+              {originalPrice && (
+                <>
+                  <span className="text-[10px] text-zinc-400 line-through">
+                    ₹{originalPrice}
+                  </span>
+                  {discountText && (
+                    <span className="text-[10px] font-bold text-emerald-600">
+                      {discountText}
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Member price tag */}
+            <div className="mt-1.5 inline-block bg-emerald-500/10 rounded px-2 py-0.5 border border-emerald-500/20">
+              <p className="text-[9px] font-bold text-emerald-700 leading-none">
+                Member Price : ₹{finalPrice ? Math.round(Number(finalPrice) * 0.88) : "690"}
+              </p>
+            </div>
+
+            {/* Action Link: Move to wishlist */}
+            <div className="mt-3">
+              <button className="text-[10px] font-bold tracking-wide uppercase text-zinc-500 underline decoration-zinc-400 underline-offset-4 hover:text-zinc-800 transition-colors">
+                {wishlistText}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Cart Banner ───────────────────────────────────────────────────────────────
+
+export function CartBannerWidget_({ widget }: { widget: CartBannerWidget }) {
+  const { title, subtitle, couponCode, couponBenefit, viewMoreText, viewAllText, isViewAllEnabled, buttonText } = widget.data;
+
+  return (
+    <div className="flex flex-col bg-white border-y py-4 px-4 font-sans select-none">
+      {/* Header Row */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold tracking-wide text-zinc-800 uppercase">
+          {title || "BEST OFFER FOR YOU"}
+        </h3>
+        {isViewAllEnabled && (
+          <button className="flex items-center gap-1 text-xs font-semibold text-amber-800 hover:text-amber-950 transition-colors uppercase">
+            <span>{viewAllText || "VIEW ALL"}</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+
+      {/* Content Row */}
+      <div className="flex items-center gap-3">
+        {/* Left: Green Badge/Icon Box */}
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/10">
+          <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+          </svg>
+        </div>
+
+        {/* Middle: Details */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-zinc-900 leading-tight">
+            {subtitle || `${couponBenefit} with "${couponCode}"`}
+          </p>
+          <button className="mt-0.5 flex items-center gap-0.5 text-xs text-zinc-400 font-medium hover:text-zinc-650 transition-colors">
+            <span>{viewMoreText}</span>
+            <ChevronRight className="h-3 w-3" />
+          </button>
+        </div>
+
+        {/* Right: Apply Button */}
+        <button className="rounded border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-500 hover:bg-zinc-50 hover:text-zinc-700 transition-all">
+          {buttonText || "Apply"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Cart Summary ──────────────────────────────────────────────────────────────
+
+export function CartSummaryWidget_({ widget }: { widget: CartSummaryWidget }) {
+  const { title, subtotal, discount, shipping, grandTotal } = widget.data;
+
+  const formatVal = (val: string) => {
+    if (!val) return "₹0";
+    if (val.startsWith("₹")) return val;
+    return `₹${val}`;
+  };
+
+  return (
+    <div className="flex flex-col bg-white py-4 px-4 font-sans select-none border-y">
+      {/* Title */}
+      <h3 className="text-sm font-semibold tracking-wide text-zinc-800 uppercase mb-4">
+        {title || "Order Summary"}
+      </h3>
+
+      {/* Breakdown rows */}
+      <div className="space-y-3.5 text-xs text-zinc-500">
+        {/* Subtotal */}
+        <div className="flex items-center justify-between">
+          <span>Subtotal</span>
+          <span className="font-semibold text-zinc-800">{formatVal(subtotal)}</span>
+        </div>
+
+        {/* Discount */}
+        <div className="flex items-center justify-between text-emerald-600 font-medium">
+          <span>Discount</span>
+          <span>-{formatVal(discount)}</span>
+        </div>
+
+        {/* Shipping */}
+        <div className="flex items-center justify-between">
+          <span>Shipping</span>
+          <span className="text-zinc-850 font-medium">{shipping || "To Be Calculated at Checkout"}</span>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <hr className="my-4 border-zinc-200" />
+
+      {/* Grand Total */}
+      <div className="flex items-center justify-between text-sm font-bold text-zinc-950">
+        <span>Grand Total</span>
+        <span>{formatVal(grandTotal)}</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Cart Checkout Sticky Bar ──────────────────────────────────────────────────
+
+export function CartCheckoutWidget_({ widget }: { widget: CartCheckoutWidget }) {
+  const { price, priceLabel, buttonText } = widget.data;
+
+  const formatVal = (val: string) => {
+    if (!val) return "₹0";
+    if (val.startsWith("₹")) return val;
+    return `₹${val}`;
+  };
+
+  return (
+    <div className="sticky bottom-[53px] z-20 flex items-center justify-between bg-white py-3.5 px-5 border-t border-zinc-150 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] font-sans w-full select-none">
+      {/* Left: Price and taxes label */}
+      <div className="flex flex-col">
+        <span className="text-lg font-black text-zinc-900 tracking-tight leading-none">
+          {formatVal(price)}
+        </span>
+        <span className="text-[10px] text-zinc-400 font-medium mt-1 leading-none">
+          {priceLabel}
+        </span>
+      </div>
+
+      {/* Right: Checkout Button */}
+      <button className="bg-[#2B2620] hover:bg-zinc-800 text-white font-extrabold tracking-widest text-[11px] px-8 py-3.5 rounded-lg uppercase transition-all shadow-sm">
+        {buttonText || "CHECKOUT"}
+      </button>
+    </div>
+  );
+}
+
+// ── Profile Banner ────────────────────────────────────────────────────────────
+
+export function ProfileBannerWidget_({ widget }: { widget: ProfileBannerWidget }) {
+  const { title, subtitle, logoUrl, backgroundMediaType, backgroundMediaValue } = widget.data;
+
+  const bgStyle = backgroundMediaType === "IMAGE" && backgroundMediaValue
+    ? { backgroundImage: `url(${backgroundMediaValue})` }
+    : { background: "radial-gradient(circle at center, #35231A 0%, #150E0A 100%)" };
+
+  return (
+    <div 
+      style={bgStyle}
+      className="relative flex flex-col items-center justify-center py-10 w-full aspect-[1.6] bg-cover bg-center overflow-hidden border-b border-zinc-900 select-none"
+    >
+      {/* Decorative concentric circular rings to mimic background geometric patterns */}
+      {!backgroundMediaValue && (
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.06] pointer-events-none">
+          <div className="w-[150px] h-[150px] rounded-full border border-white" />
+          <div className="absolute w-[220px] h-[220px] rounded-full border border-white" />
+          <div className="absolute w-[300px] h-[300px] rounded-full border border-white" />
+          <div className="absolute w-[380px] h-[380px] rounded-full border border-white" />
+          <div className="absolute w-[460px] h-[460px] rounded-full border border-white" />
+        </div>
+      )}
+
+      {/* Logo in the center */}
+      <div className="w-16 h-16 rounded-full bg-[#24231B] border border-zinc-700/50 flex items-center justify-center shadow-lg mb-3">
+        {logoUrl ? (
+          <img src={logoUrl} alt="Logo" className="w-10 h-10 object-contain rounded-full" />
+        ) : (
+          <svg className="w-8 h-8 text-[#D5C29E]" viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="18" y="18" width="28" height="28" rx="2" />
+            <path d="M28 28h8v8h-8z" />
+            <path d="M28 36v8" />
+          </svg>
+        )}
+      </div>
+
+      {/* Subtitle */}
+      <span className="text-[10px] uppercase tracking-[0.25em] text-[#C0B49F] font-bold leading-none mb-1">
+        {subtitle}
+      </span>
+
+      {/* Title */}
+      <span className="text-xl font-black uppercase tracking-widest text-[#EADCBF] leading-none">
+        {title}
+      </span>
+    </div>
+  );
+}
+
+// ── Profile List Helper and Widget ────────────────────────────────────────────
+
+function getProfileIcon(name?: string) {
+  const norm = (name ?? "").toLowerCase().trim();
+  if (norm.includes("profile") || norm.includes("user")) return <User className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("address") || norm.includes("store") || norm.includes("locator") || norm.includes("map")) return <MapPin className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("wishlist") || norm.includes("heart")) return <Heart className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("history") || norm.includes("order") || norm.includes("clock")) return <History className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("wallet") || norm.includes("card") || norm.includes("payment")) return <Wallet className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("support") || norm.includes("phone") || norm.includes("contact")) return <Phone className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("shipping") || norm.includes("truck") || norm.includes("delivery")) return <Truck className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("privacy") || norm.includes("shield") || norm.includes("policy")) return <Shield className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("track") || norm.includes("box") || norm.includes("package")) return <Box className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("refund") || norm.includes("rotate") || norm.includes("return")) return <RotateCcw className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  if (norm.includes("exchange") || norm.includes("repeat") || norm.includes("arrow")) return <ArrowLeftRight className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+  return <User className="h-[21px] w-[21px] text-zinc-650" strokeWidth={1.25} />;
+}
+
+export function ProfileListWidget_({ widget }: { widget: ProfileListWidget }) {
+  const { title, subtitle, items, moreItems } = widget.data;
+
+  return (
+    <div className="w-full bg-white select-none">
+      {/* Group 1 */}
+      {title && (
+        <div className="text-[11px] font-extrabold tracking-[0.12em] text-[#A38D64] uppercase px-5 pt-6 pb-2.5">
+          {title}
+        </div>
+      )}
+      <div className="flex flex-col border-t border-zinc-100">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex items-center justify-between py-4 px-5 border-b border-zinc-100 hover:bg-zinc-50 active:bg-zinc-100 transition-all cursor-pointer"
+          >
+            <div className="flex items-center gap-4.5">
+              <div className="flex items-center justify-center shrink-0">
+                {getProfileIcon(item.icon || item.title)}
+              </div>
+              <span className="text-[13.5px] font-medium text-[#2E2E2E] tracking-tight">
+                {item.title}
+              </span>
+            </div>
+            <ChevronRight className="h-4 w-4 text-zinc-400 shrink-0" strokeWidth={2} />
+          </div>
+        ))}
+      </div>
+
+      {/* Group 2 */}
+      {subtitle && moreItems && (
+        <>
+          <div className="text-[11px] font-extrabold tracking-[0.12em] text-[#A38D64] uppercase px-5 pt-6 pb-2.5">
+            {subtitle}
+          </div>
+          <div className="flex flex-col border-t border-zinc-100">
+            {moreItems.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between py-4 px-5 border-b border-zinc-100 hover:bg-zinc-50 active:bg-zinc-100 transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-4.5">
+                  <div className="flex items-center justify-center shrink-0">
+                    {getProfileIcon(item.icon || item.title)}
+                  </div>
+                  <span className="text-[13.5px] font-medium text-[#2E2E2E] tracking-tight">
+                    {item.title}
+                  </span>
+                </div>
+                <ChevronRight className="h-4 w-4 text-zinc-400 shrink-0" strokeWidth={2} />
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Master widget renderer dispatcher ─────────────────────────────────────────
 
 export function WidgetRenderer({ widget }: { widget: UIWidget }) {
@@ -1038,6 +1462,18 @@ export function WidgetRenderer({ widget }: { widget: UIWidget }) {
 
   const content = (() => {
     switch (widget.widgetType) {
+      case "CART_PRODUCT":
+        return <CartProductWidget_ widget={widget as CartProductWidget} />;
+      case "CART_BANNER":
+        return <CartBannerWidget_ widget={widget as CartBannerWidget} />;
+      case "CART_SUMMARY":
+        return <CartSummaryWidget_ widget={widget as CartSummaryWidget} />;
+      case "CART_CHECKOUT":
+        return <CartCheckoutWidget_ widget={widget as CartCheckoutWidget} />;
+      case "PROFILE_BANNER":
+        return <ProfileBannerWidget_ widget={widget as ProfileBannerWidget} />;
+      case "PROFILE_LIST":
+        return <ProfileListWidget_ widget={widget as ProfileListWidget} />;
       case "HERO_BANNER":
         return <HeroBannerWidget widget={widget as BannerWidget} />;
       case "PRODUCT_GRID":

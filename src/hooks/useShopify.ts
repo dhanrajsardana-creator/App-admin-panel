@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { shopifyApi, type ShopifyCollection, type ShopifyProduct } from "@/api/shopify";
+import { shopifyApi, type ShopifyCollection, type ShopifyProduct, type ShopifyDiscountNode } from "@/api/shopify";
 import { storefrontApi } from "@/api/shopifyStorefront";
 import { ENV } from "@/config/env";
 
@@ -157,4 +157,33 @@ export function useShopifyResolver() {
     collections: collectionsQ.data ?? [],
     products: productsQ.data ?? [],
   };
+}
+
+export function useShopifyDiscounts() {
+  return useQuery({
+    queryKey: ["shopify", "discounts"],
+    queryFn: () => shopifyApi.discounts(),
+    enabled: ENV.shopifyEnabled,
+    staleTime: STALE,
+    retry: 1,
+  });
+}
+
+export function getShopifyDiscountTypeLabel(typename: string): string {
+  switch (typename) {
+    case "DiscountCodeBasic":
+      return "Amount off Products or Amount off Order";
+    case "DiscountCodeBxgy":
+      return "Buy X Get Y";
+    case "DiscountAutomaticBasic":
+      return "Automatic Amount off";
+    case "DiscountAutomaticBxgy":
+      return "Automatic BxGy";
+    case "DiscountCodeFreeShipping":
+      return "Free Shipping Code";
+    case "DiscountAutomaticFreeShipping":
+      return "Automatic Free Shipping";
+    default:
+      return typename.replace("Discount", "");
+  }
 }
