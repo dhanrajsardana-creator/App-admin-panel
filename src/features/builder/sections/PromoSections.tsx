@@ -462,10 +462,9 @@ export function CategoryBannerSection({ section, items }: SectionRendererProps) 
   const image =
     str(config, "backgroundImage") ||
     str(config, "backgroundMediaValue") ||
-    (first ? itemImage(first) : null) ||
-    "/figma-home/10-category-banner-1.png";
-  const name = section.title || first?.title || "BOTTOMS";
-  const count = str(config, "productCount") || "1280 PRODUCTS";
+    (first ? itemImage(first) : null);
+  const name = section.title || first?.title || "";
+  const count = str(config, "productCount") || "";
 
   return (
     <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-800">

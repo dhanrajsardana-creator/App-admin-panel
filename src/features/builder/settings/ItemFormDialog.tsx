@@ -133,7 +133,7 @@ export function ItemFormDialog({
       subtitle: item?.subtitle ?? "",
       imageUrl: item?.imageUrl ?? "",
       mobileImageUrl: item?.mobileImageUrl ?? "",
-      videoUrl: item?.videoUrl ?? "",
+
       badgeText: item?.badgeText ?? "",
       itemType: item?.itemType ?? ((isNewDrop || isProductShelf || isCategoryProductsShelf) ? "product" : (isCarousel ? "PROMO_BANNER" : (isList ? "NAVIGATION_ITEM" : ""))),
       referenceType: item?.referenceType ?? ((isNewDrop || isProductShelf || isCategoryProductsShelf) ? "PRODUCT" : "NONE"),
@@ -167,8 +167,8 @@ export function ItemFormDialog({
   const handleSave = () => {
     let metadataJson: JsonMap = { ...metaJson };
     if (sectionType === "hero_carousel") {
-      const titleVal = (form.title as string) || "BEYOND";
-      const subtitleVal = (form.subtitle as string) || "ORDINARY";
+      const titleVal = (form.title as string) || "";
+      const subtitleVal = (form.subtitle as string) || "";
       const imageVal = (form.imageUrl as string) || "";
       metadataJson.overlayingTexts = [titleVal, subtitleVal];
       metadataJson.backgroundMediaType = "IMAGE";
