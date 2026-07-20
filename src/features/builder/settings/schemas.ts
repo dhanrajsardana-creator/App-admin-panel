@@ -202,7 +202,6 @@ export const SECTION_SCHEMAS: Record<string, SectionSchema> = {
     fields: [
       { kind: "text", key: "title", label: "Section title", isRoot: true, placeholder: "ARE WE FEELING SMOOTH OR WILD?", group: "content" },
       { kind: "switch", key: "showSectionTitle", label: "Show section title", group: "style" },
-      { kind: "switch", key: "showLabel", label: "Show labels", group: "style" },
       { kind: "number", key: "columns", label: "Columns", min: 2, max: 5, group: "style" },
     ],
   },

@@ -221,11 +221,11 @@ export function FeaturedCollectionSection({ section, items }: SectionRendererPro
   const config = section.configJson ?? {};
 
   const overlayingTexts = (section.configJson?.overlayingTexts as string[]) || [];
-  const title = section.title || overlayingTexts[0] || "THE COLLECTIVES";
-  const subtitle = section.subtitle || overlayingTexts[1] || "GET THE VIBE";
-  const rawBadge = overlayingTexts[2] || "₹799";
+  const title = section.title || overlayingTexts[0] || "";
+  const subtitle = section.subtitle || overlayingTexts[1] || "";
+  const rawBadge = overlayingTexts[2] || "";
 
-  let badgeText = "₹799";
+  let badgeText = "";
   if (rawBadge) {
     const match = rawBadge.match(/\d+/);
     badgeText = match ? `₹${match[0]}` : rawBadge;
@@ -241,8 +241,7 @@ export function FeaturedCollectionSection({ section, items }: SectionRendererPro
   const heroImageUrl =
     str(config, "backgroundMediaValue") ||
     (firstItem ? itemImage(firstItem) : null) ||
-    firstItem?.imageUrl ||
-    "/figma-home/13-z-collective.png"; // fallback
+    firstItem?.imageUrl;
 
   const maxItems = num(config, "maxItems", 9);
   const columns = num(config, "columns", 3);
@@ -373,38 +372,20 @@ export function CategoryShowcaseSection({ section, items }: SectionRendererProps
   const { data: collectionData, isLoading } = useShopifyCollectionDetail(hasResolvedProducts ? null : activeCollectionId);
   const productsToRender = hasResolvedProducts ? resolvedProducts : (collectionData?.products || []);
 
-  const rawTitle = section.title || firstItem?.title || resolved?.title || "Bottoms";
-  const categoryName = rawTitle.split("/")[0] || "Bottoms";
+  const rawTitle = section.title || firstItem?.title || resolved?.title || "";
+  const categoryName = rawTitle.split("/")[0] || "";
 
   let productCountText = "";
   if (resolved?.productCount != null) {
-    productCountText = `${resolved.productCount} Products`;
-  } else if (firstItem?.subtitle) {
-    productCountText = firstItem.subtitle;
-  } else {
-    productCountText = `${collectionData?.productsCount || 1280} Products`;
+    productCountText = `${resolved.productCount} PRODUCTS`;
   }
 
-  // Map fallback banner image based on title
-  const bannerSlug = rawTitle.toLowerCase();
-  let defaultBanner = "/figma-home/10-category-banner-1.png";
-  if (bannerSlug.includes("shirt") && !bannerSlug.includes("t-shirt") && !bannerSlug.includes("tshirt")) {
-    defaultBanner = "/figma-home/14-category-banner-2.png";
-  } else if (bannerSlug.includes("polo")) {
-    defaultBanner = "/figma-home/18-category-banner-3.png";
-  } else if (bannerSlug.includes("denim")) {
-    defaultBanner = "/figma-home/21-category-banner-4.png";
-  } else if (bannerSlug.includes("bottom")) {
-    defaultBanner = "/figma-home/24-category-banner-5.png";
-  }
-
-  const isDark = bool(config, "isDarkModeEnabled", bool(config, "darkMode", false));
+  const isDark = bool(config, "isDarkModeEnabled", false);
 
   const bannerImageUrl =
     str(config, "backgroundMediaValue") ||
     (firstItem ? itemImage(firstItem) : null) ||
-    firstItem?.imageUrl ||
-    defaultBanner;
+    firstItem?.imageUrl;
 
   return (
     <div className={isDark ? "bg-[#121212]" : "bg-white"}>
